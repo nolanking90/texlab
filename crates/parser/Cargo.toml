@@ -8,7 +8,7 @@ rust-version.workspace = true
 
 [dependencies]
 log.workspace = true
-logos = "0.14.0"
+logos = "0.14.1"
 once_cell.workspace = true
 pathdiff = "0.2.1"
 regex.workspace = true
@@ -16,7 +16,7 @@ rowan.workspace = true
 rustc-hash.workspace = true
 syntax = { path = "../syntax" }
 tempfile.workspace = true
-versions = "6.3.1"
+versions = "6.3.2"
 
 [dev-dependencies]
 expect-test.workspace = true
