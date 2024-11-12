@@ -101,6 +101,7 @@ impl<'a> Parser<'a> {
 
     fn content(&mut self, context: ParserContext) {
         match self.peek().unwrap() {
+            // TODO: handle LineComments
             Token::LineBreak | Token::Whitespace | Token::LineComment => self.eat(),
             Token::LCurly if context.allow_environment => self.curly_group(),
             Token::LCurly => self.curly_group_without_environments(),
@@ -111,7 +112,7 @@ impl<'a> Parser<'a> {
                 self.builder.finish_node();
             }
             Token::Pipe | Token::Word | Token::Comma => self.text(context),
-            Token::Eq => self.eat(),
+            Token::Eq => self.equal_sign(),
             Token::Dollar => self.formula(),
             Token::CommandName(name) => match name {
                 CommandName::Generic => self.generic_command(),
@@ -318,15 +319,12 @@ impl<'a> Parser<'a> {
         self.builder.start_node(BRACK_GROUP_WORD.into());
         self.eat();
         self.trivia();
-        match self.peek() {
-            Some(Token::Word | Token::Pipe) => {
-                self.key_with_opts(KeyOptions {
-                    allow_eq: true,
-                    allow_bracks: false,
-                    allow_parens: true,
-                });
-            }
-            Some(_) | None => {}
+        if let Some(Token::Word | Token::Pipe) = self.peek() {
+            self.key_with_opts(KeyOptions {
+                allow_eq: true,
+                allow_bracks: false,
+                allow_parens: true,
+            });
         }
         self.expect(Token::RBrack);
         self.builder.finish_node();
@@ -571,7 +569,13 @@ impl<'a> Parser<'a> {
         self.builder.start_node(PREAMBLE.into());
         while self
             .peek()
-            .filter(|&kind| kind != Token::CommandName(CommandName::EndEnvironment))
+            .filter(|&kind| {
+                !matches!(
+                    kind,
+                    Token::CommandName(CommandName::EndEnvironment)
+                        | Token::CommandName(CommandName::BeginEnvironment)
+                )
+            })
             .is_some()
         {
             self.content(ParserContext::default());
@@ -1293,6 +1297,13 @@ impl<'a> Parser<'a> {
             self.curly_group();
         }
 
+        self.builder.finish_node();
+    }
+
+    fn equal_sign(&mut self) {
+        self.builder.start_node(EQUALITY_SIGN.into());
+        self.eat();
+        self.trivia();
         self.builder.finish_node();
     }
 }

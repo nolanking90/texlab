@@ -113,32 +113,32 @@ fn test_caption_figure() {
     check(
         r#"\begin{figure}\caption{Foo}\end{figure}"#,
         expect![[r#"
-        ROOT@0..39
-          PREAMBLE@0..39
-            ENVIRONMENT@0..39
-              BEGIN@0..14
-                COMMAND_NAME@0..6 "\\begin"
-                CURLY_GROUP_WORD@6..14
-                  L_CURLY@6..7 "{"
-                  KEY@7..13
-                    WORD@7..13 "figure"
-                  R_CURLY@13..14 "}"
-              CAPTION@14..27
-                COMMAND_NAME@14..22 "\\caption"
-                CURLY_GROUP@22..27
-                  L_CURLY@22..23 "{"
-                  TEXT@23..26
-                    WORD@23..26 "Foo"
-                  R_CURLY@26..27 "}"
-              END@27..39
-                COMMAND_NAME@27..31 "\\end"
-                CURLY_GROUP_WORD@31..39
-                  L_CURLY@31..32 "{"
-                  KEY@32..38
-                    WORD@32..38 "figure"
-                  R_CURLY@38..39 "}"
+            ROOT@0..39
+              PREAMBLE@0..0
+              ENVIRONMENT@0..39
+                BEGIN@0..14
+                  COMMAND_NAME@0..6 "\\begin"
+                  CURLY_GROUP_WORD@6..14
+                    L_CURLY@6..7 "{"
+                    KEY@7..13
+                      WORD@7..13 "figure"
+                    R_CURLY@13..14 "}"
+                CAPTION@14..27
+                  COMMAND_NAME@14..22 "\\caption"
+                  CURLY_GROUP@22..27
+                    L_CURLY@22..23 "{"
+                    TEXT@23..26
+                      WORD@23..26 "Foo"
+                    R_CURLY@26..27 "}"
+                END@27..39
+                  COMMAND_NAME@27..31 "\\end"
+                  CURLY_GROUP_WORD@31..39
+                    L_CURLY@31..32 "{"
+                    KEY@32..38
+                      WORD@32..38 "figure"
+                    R_CURLY@38..39 "}"
 
-    "#]],
+        "#]],
     );
 }
 
@@ -701,13 +701,15 @@ fn test_command_definition_with_begin() {
                         L_BRACK@51..52 "["
                         TEXT@52..62
                           WORD@52..62 "leftmargin"
-                        EQUALITY_SIGN@62..63 "="
+                        EQUALITY_SIGN@62..63
+                          EQUALITY_SIGN@62..63 "="
                         TEXT@63..75
                           WORD@63..68 "0.5cm"
                           COMMA@68..69 ","
                           WHITESPACE@69..70 " "
                           WORD@70..75 "label"
-                        EQUALITY_SIGN@75..76 "="
+                        EQUALITY_SIGN@75..76
+                          EQUALITY_SIGN@75..76 "="
                         CURLY_GROUP@76..78
                           L_CURLY@76..77 "{"
                           R_CURLY@77..78 "}"
@@ -767,40 +769,40 @@ fn test_environment_asymptote() {
 \end{asy}"#,
         expect![[r#"
             ROOT@0..50
-              PREAMBLE@0..50
-                ENVIRONMENT@0..50
-                  BEGIN@0..16
-                    COMMAND_NAME@0..6 "\\begin"
-                    CURLY_GROUP_WORD@6..16
-                      L_CURLY@6..7 "{"
-                      KEY@7..10
-                        WORD@7..10 "asy"
-                      R_CURLY@10..11 "}"
-                      WHITESPACE@11..12 "\n"
-                      WHITESPACE@12..16 "    "
-                  TEXT@16..22
-                    WORD@16..22 "printf"
-                  MIXED_GROUP@22..39
-                    L_PAREN@22..23 "("
-                    TEXT@23..35
-                      WORD@23..29 "\"Hello"
-                      WHITESPACE@29..30 " "
-                      WORD@30..35 "World"
-                    GENERIC_COMMAND@35..37
-                      COMMAND_NAME@35..37 "\\n"
-                    TEXT@37..38
-                      WORD@37..38 "\""
-                    R_PAREN@38..39 ")"
-                  TEXT@39..41
-                    WORD@39..40 ";"
-                    WHITESPACE@40..41 "\n"
-                  END@41..50
-                    COMMAND_NAME@41..45 "\\end"
-                    CURLY_GROUP_WORD@45..50
-                      L_CURLY@45..46 "{"
-                      KEY@46..49
-                        WORD@46..49 "asy"
-                      R_CURLY@49..50 "}"
+              PREAMBLE@0..0
+              ENVIRONMENT@0..50
+                BEGIN@0..16
+                  COMMAND_NAME@0..6 "\\begin"
+                  CURLY_GROUP_WORD@6..16
+                    L_CURLY@6..7 "{"
+                    KEY@7..10
+                      WORD@7..10 "asy"
+                    R_CURLY@10..11 "}"
+                    WHITESPACE@11..12 "\n"
+                    WHITESPACE@12..16 "    "
+                TEXT@16..22
+                  WORD@16..22 "printf"
+                MIXED_GROUP@22..39
+                  L_PAREN@22..23 "("
+                  TEXT@23..35
+                    WORD@23..29 "\"Hello"
+                    WHITESPACE@29..30 " "
+                    WORD@30..35 "World"
+                  GENERIC_COMMAND@35..37
+                    COMMAND_NAME@35..37 "\\n"
+                  TEXT@37..38
+                    WORD@37..38 "\""
+                  R_PAREN@38..39 ")"
+                TEXT@39..41
+                  WORD@39..40 ";"
+                  WHITESPACE@40..41 "\n"
+                END@41..50
+                  COMMAND_NAME@41..45 "\\end"
+                  CURLY_GROUP_WORD@45..50
+                    L_CURLY@45..46 "{"
+                    KEY@46..49
+                      WORD@46..49 "asy"
+                    R_CURLY@49..50 "}"
 
         "#]],
     );
@@ -894,43 +896,43 @@ fn test_environment_nested() {
     check(
         r#"\begin{foo} \begin{qux} \end{baz} \end{bar}"#,
         expect![[r#"
-        ROOT@0..43
-          PREAMBLE@0..43
-            ENVIRONMENT@0..43
-              BEGIN@0..12
-                COMMAND_NAME@0..6 "\\begin"
-                CURLY_GROUP_WORD@6..12
-                  L_CURLY@6..7 "{"
-                  KEY@7..10
-                    WORD@7..10 "foo"
-                  R_CURLY@10..11 "}"
-                  WHITESPACE@11..12 " "
-              ENVIRONMENT@12..34
-                BEGIN@12..24
-                  COMMAND_NAME@12..18 "\\begin"
-                  CURLY_GROUP_WORD@18..24
-                    L_CURLY@18..19 "{"
-                    KEY@19..22
-                      WORD@19..22 "qux"
-                    R_CURLY@22..23 "}"
-                    WHITESPACE@23..24 " "
-                END@24..34
-                  COMMAND_NAME@24..28 "\\end"
-                  CURLY_GROUP_WORD@28..34
-                    L_CURLY@28..29 "{"
-                    KEY@29..32
-                      WORD@29..32 "baz"
-                    R_CURLY@32..33 "}"
-                    WHITESPACE@33..34 " "
-              END@34..43
-                COMMAND_NAME@34..38 "\\end"
-                CURLY_GROUP_WORD@38..43
-                  L_CURLY@38..39 "{"
-                  KEY@39..42
-                    WORD@39..42 "bar"
-                  R_CURLY@42..43 "}"
+            ROOT@0..43
+              PREAMBLE@0..0
+              ENVIRONMENT@0..43
+                BEGIN@0..12
+                  COMMAND_NAME@0..6 "\\begin"
+                  CURLY_GROUP_WORD@6..12
+                    L_CURLY@6..7 "{"
+                    KEY@7..10
+                      WORD@7..10 "foo"
+                    R_CURLY@10..11 "}"
+                    WHITESPACE@11..12 " "
+                ENVIRONMENT@12..34
+                  BEGIN@12..24
+                    COMMAND_NAME@12..18 "\\begin"
+                    CURLY_GROUP_WORD@18..24
+                      L_CURLY@18..19 "{"
+                      KEY@19..22
+                        WORD@19..22 "qux"
+                      R_CURLY@22..23 "}"
+                      WHITESPACE@23..24 " "
+                  END@24..34
+                    COMMAND_NAME@24..28 "\\end"
+                    CURLY_GROUP_WORD@28..34
+                      L_CURLY@28..29 "{"
+                      KEY@29..32
+                        WORD@29..32 "baz"
+                      R_CURLY@32..33 "}"
+                      WHITESPACE@33..34 " "
+                END@34..43
+                  COMMAND_NAME@34..38 "\\end"
+                  CURLY_GROUP_WORD@38..43
+                    L_CURLY@38..39 "{"
+                    KEY@39..42
+                      WORD@39..42 "bar"
+                    R_CURLY@42..43 "}"
 
-    "#]],
+        "#]],
     );
 }
 
@@ -940,41 +942,41 @@ fn test_environment_nested_missing_braces() {
         r#"\begin{foo \begin{qux Hello World \end{baz} \end{bar"#,
         expect![[r#"
             ROOT@0..52
-              PREAMBLE@0..52
-                ENVIRONMENT@0..52
-                  BEGIN@0..11
-                    COMMAND_NAME@0..6 "\\begin"
-                    CURLY_GROUP_WORD@6..11
-                      L_CURLY@6..7 "{"
-                      KEY@7..11
-                        WORD@7..10 "foo"
-                        WHITESPACE@10..11 " "
-                  ENVIRONMENT@11..44
-                    BEGIN@11..34
-                      COMMAND_NAME@11..17 "\\begin"
-                      CURLY_GROUP_WORD@17..34
-                        L_CURLY@17..18 "{"
-                        KEY@18..34
-                          WORD@18..21 "qux"
-                          WHITESPACE@21..22 " "
-                          WORD@22..27 "Hello"
-                          WHITESPACE@27..28 " "
-                          WORD@28..33 "World"
-                          WHITESPACE@33..34 " "
-                    END@34..44
-                      COMMAND_NAME@34..38 "\\end"
-                      CURLY_GROUP_WORD@38..44
-                        L_CURLY@38..39 "{"
-                        KEY@39..42
-                          WORD@39..42 "baz"
-                        R_CURLY@42..43 "}"
-                        WHITESPACE@43..44 " "
-                  END@44..52
-                    COMMAND_NAME@44..48 "\\end"
-                    CURLY_GROUP_WORD@48..52
-                      L_CURLY@48..49 "{"
-                      KEY@49..52
-                        WORD@49..52 "bar"
+              PREAMBLE@0..0
+              ENVIRONMENT@0..52
+                BEGIN@0..11
+                  COMMAND_NAME@0..6 "\\begin"
+                  CURLY_GROUP_WORD@6..11
+                    L_CURLY@6..7 "{"
+                    KEY@7..11
+                      WORD@7..10 "foo"
+                      WHITESPACE@10..11 " "
+                ENVIRONMENT@11..44
+                  BEGIN@11..34
+                    COMMAND_NAME@11..17 "\\begin"
+                    CURLY_GROUP_WORD@17..34
+                      L_CURLY@17..18 "{"
+                      KEY@18..34
+                        WORD@18..21 "qux"
+                        WHITESPACE@21..22 " "
+                        WORD@22..27 "Hello"
+                        WHITESPACE@27..28 " "
+                        WORD@28..33 "World"
+                        WHITESPACE@33..34 " "
+                  END@34..44
+                    COMMAND_NAME@34..38 "\\end"
+                    CURLY_GROUP_WORD@38..44
+                      L_CURLY@38..39 "{"
+                      KEY@39..42
+                        WORD@39..42 "baz"
+                      R_CURLY@42..43 "}"
+                      WHITESPACE@43..44 " "
+                END@44..52
+                  COMMAND_NAME@44..48 "\\end"
+                  CURLY_GROUP_WORD@48..52
+                    L_CURLY@48..49 "{"
+                    KEY@49..52
+                      WORD@49..52 "bar"
 
         "#]],
     );
@@ -985,31 +987,31 @@ fn test_environment_simple() {
     check(
         r#"\begin{foo} Hello World \end{bar}"#,
         expect![[r#"
-        ROOT@0..33
-          PREAMBLE@0..33
-            ENVIRONMENT@0..33
-              BEGIN@0..12
-                COMMAND_NAME@0..6 "\\begin"
-                CURLY_GROUP_WORD@6..12
-                  L_CURLY@6..7 "{"
-                  KEY@7..10
-                    WORD@7..10 "foo"
-                  R_CURLY@10..11 "}"
-                  WHITESPACE@11..12 " "
-              TEXT@12..24
-                WORD@12..17 "Hello"
-                WHITESPACE@17..18 " "
-                WORD@18..23 "World"
-                WHITESPACE@23..24 " "
-              END@24..33
-                COMMAND_NAME@24..28 "\\end"
-                CURLY_GROUP_WORD@28..33
-                  L_CURLY@28..29 "{"
-                  KEY@29..32
-                    WORD@29..32 "bar"
-                  R_CURLY@32..33 "}"
+            ROOT@0..33
+              PREAMBLE@0..0
+              ENVIRONMENT@0..33
+                BEGIN@0..12
+                  COMMAND_NAME@0..6 "\\begin"
+                  CURLY_GROUP_WORD@6..12
+                    L_CURLY@6..7 "{"
+                    KEY@7..10
+                      WORD@7..10 "foo"
+                    R_CURLY@10..11 "}"
+                    WHITESPACE@11..12 " "
+                TEXT@12..24
+                  WORD@12..17 "Hello"
+                  WHITESPACE@17..18 " "
+                  WORD@18..23 "World"
+                  WHITESPACE@23..24 " "
+                END@24..33
+                  COMMAND_NAME@24..28 "\\end"
+                  CURLY_GROUP_WORD@28..33
+                    L_CURLY@28..29 "{"
+                    KEY@29..32
+                      WORD@29..32 "bar"
+                    R_CURLY@32..33 "}"
 
-    "#]],
+        "#]],
     );
 }
 
@@ -1039,34 +1041,34 @@ fn test_equation_missing_begin() {
     check(
         r#"\begin{a} foo bar \] \end{b}"#,
         expect![[r#"
-        ROOT@0..28
-          PREAMBLE@0..28
-            ENVIRONMENT@0..28
-              BEGIN@0..10
-                COMMAND_NAME@0..6 "\\begin"
-                CURLY_GROUP_WORD@6..10
-                  L_CURLY@6..7 "{"
-                  KEY@7..8
-                    WORD@7..8 "a"
-                  R_CURLY@8..9 "}"
-                  WHITESPACE@9..10 " "
-              TEXT@10..18
-                WORD@10..13 "foo"
-                WHITESPACE@13..14 " "
-                WORD@14..17 "bar"
-                WHITESPACE@17..18 " "
-              GENERIC_COMMAND@18..21
-                COMMAND_NAME@18..20 "\\]"
-                WHITESPACE@20..21 " "
-              END@21..28
-                COMMAND_NAME@21..25 "\\end"
-                CURLY_GROUP_WORD@25..28
-                  L_CURLY@25..26 "{"
-                  KEY@26..27
-                    WORD@26..27 "b"
-                  R_CURLY@27..28 "}"
+            ROOT@0..28
+              PREAMBLE@0..0
+              ENVIRONMENT@0..28
+                BEGIN@0..10
+                  COMMAND_NAME@0..6 "\\begin"
+                  CURLY_GROUP_WORD@6..10
+                    L_CURLY@6..7 "{"
+                    KEY@7..8
+                      WORD@7..8 "a"
+                    R_CURLY@8..9 "}"
+                    WHITESPACE@9..10 " "
+                TEXT@10..18
+                  WORD@10..13 "foo"
+                  WHITESPACE@13..14 " "
+                  WORD@14..17 "bar"
+                  WHITESPACE@17..18 " "
+                GENERIC_COMMAND@18..21
+                  COMMAND_NAME@18..20 "\\]"
+                  WHITESPACE@20..21 " "
+                END@21..28
+                  COMMAND_NAME@21..25 "\\end"
+                  CURLY_GROUP_WORD@25..28
+                    L_CURLY@25..26 "{"
+                    KEY@26..27
+                      WORD@26..27 "b"
+                    R_CURLY@27..28 "}"
 
-    "#]],
+        "#]],
     );
 }
 
@@ -1560,34 +1562,34 @@ fn test_equation_missing_end() {
     check(
         r#"\begin{a} \[ foo bar \end{b}"#,
         expect![[r#"
-        ROOT@0..28
-          PREAMBLE@0..28
-            ENVIRONMENT@0..28
-              BEGIN@0..10
-                COMMAND_NAME@0..6 "\\begin"
-                CURLY_GROUP_WORD@6..10
-                  L_CURLY@6..7 "{"
-                  KEY@7..8
-                    WORD@7..8 "a"
-                  R_CURLY@8..9 "}"
-                  WHITESPACE@9..10 " "
-              EQUATION@10..21
-                COMMAND_NAME@10..12 "\\["
-                WHITESPACE@12..13 " "
-                TEXT@13..21
-                  WORD@13..16 "foo"
-                  WHITESPACE@16..17 " "
-                  WORD@17..20 "bar"
-                  WHITESPACE@20..21 " "
-              END@21..28
-                COMMAND_NAME@21..25 "\\end"
-                CURLY_GROUP_WORD@25..28
-                  L_CURLY@25..26 "{"
-                  KEY@26..27
-                    WORD@26..27 "b"
-                  R_CURLY@27..28 "}"
+            ROOT@0..28
+              PREAMBLE@0..0
+              ENVIRONMENT@0..28
+                BEGIN@0..10
+                  COMMAND_NAME@0..6 "\\begin"
+                  CURLY_GROUP_WORD@6..10
+                    L_CURLY@6..7 "{"
+                    KEY@7..8
+                      WORD@7..8 "a"
+                    R_CURLY@8..9 "}"
+                    WHITESPACE@9..10 " "
+                EQUATION@10..21
+                  COMMAND_NAME@10..12 "\\["
+                  WHITESPACE@12..13 " "
+                  TEXT@13..21
+                    WORD@13..16 "foo"
+                    WHITESPACE@16..17 " "
+                    WORD@17..20 "bar"
+                    WHITESPACE@20..21 " "
+                END@21..28
+                  COMMAND_NAME@21..25 "\\end"
+                  CURLY_GROUP_WORD@25..28
+                    L_CURLY@25..26 "{"
+                    KEY@26..27
+                      WORD@26..27 "b"
+                    R_CURLY@27..28 "}"
 
-    "#]],
+        "#]],
     );
 }
 
@@ -2425,7 +2427,7 @@ fn test_issue_745() {
 \end{document}"#,
         expect![[r##"
             ROOT@0..271
-              PREAMBLE@0..271
+              PREAMBLE@0..239
                 CLASS_INCLUDE@0..24
                   COMMAND_NAME@0..14 "\\documentclass"
                   CURLY_GROUP_WORD_LIST@14..24
@@ -2533,22 +2535,22 @@ fn test_issue_745() {
                 GENERIC_COMMAND@223..239
                   COMMAND_NAME@223..237 "\\ExplSyntaxOff"
                   WHITESPACE@237..239 "\n\n"
-                ENVIRONMENT@239..271
-                  BEGIN@239..257
-                    COMMAND_NAME@239..245 "\\begin"
-                    CURLY_GROUP_WORD@245..257
-                      L_CURLY@245..246 "{"
-                      KEY@246..254
-                        WORD@246..254 "document"
-                      R_CURLY@254..255 "}"
-                      WHITESPACE@255..257 "\n\n"
-                  END@257..271
-                    COMMAND_NAME@257..261 "\\end"
-                    CURLY_GROUP_WORD@261..271
-                      L_CURLY@261..262 "{"
-                      KEY@262..270
-                        WORD@262..270 "document"
-                      R_CURLY@270..271 "}"
+              ENVIRONMENT@239..271
+                BEGIN@239..257
+                  COMMAND_NAME@239..245 "\\begin"
+                  CURLY_GROUP_WORD@245..257
+                    L_CURLY@245..246 "{"
+                    KEY@246..254
+                      WORD@246..254 "document"
+                    R_CURLY@254..255 "}"
+                    WHITESPACE@255..257 "\n\n"
+                END@257..271
+                  COMMAND_NAME@257..261 "\\end"
+                  CURLY_GROUP_WORD@261..271
+                    L_CURLY@261..262 "{"
+                    KEY@262..270
+                      WORD@262..270 "document"
+                    R_CURLY@270..271 "}"
 
         "##]],
     );
@@ -2612,7 +2614,7 @@ This is an asdf undefined command
 \end{document}"#,
         expect![[r#"
             ROOT@0..135
-              PREAMBLE@0..135
+              PREAMBLE@0..24
                 CLASS_INCLUDE@0..24
                   COMMAND_NAME@0..14 "\\documentclass"
                   CURLY_GROUP_WORD_LIST@14..24
@@ -2621,52 +2623,52 @@ This is an asdf undefined command
                       WORD@15..22 "minimal"
                     R_CURLY@22..23 "}"
                     WHITESPACE@23..24 "\n"
-                ENVIRONMENT@24..135
-                  BEGIN@24..41
-                    COMMAND_NAME@24..30 "\\begin"
-                    CURLY_GROUP_WORD@30..41
-                      L_CURLY@30..31 "{"
-                      KEY@31..39
-                        WORD@31..39 "document"
-                      R_CURLY@39..40 "}"
-                      WHITESPACE@40..41 "\n"
-                  TEXT@41..75
-                    WORD@41..45 "This"
-                    WHITESPACE@45..46 " "
-                    WORD@46..48 "is"
-                    WHITESPACE@48..49 " "
-                    WORD@49..51 "an"
-                    WHITESPACE@51..52 " "
-                    WORD@52..56 "asdf"
-                    WHITESPACE@56..57 " "
-                    WORD@57..66 "undefined"
-                    WHITESPACE@66..67 " "
-                    WORD@67..74 "command"
-                    WHITESPACE@74..75 "\n"
-                  BLOCK_COMMENT@75..120
-                    COMMAND_NAME@75..83 "\\iffalse"
-                    WHITESPACE@83..84 "\n"
-                    WHITESPACE@84..86 "  "
-                    BLOCK_COMMENT@86..97
-                      COMMAND_NAME@86..94 "\\iffalse"
-                      COMMAND_NAME@94..97 "\\fi"
-                    WHITESPACE@97..98 "\n"
-                    WHITESPACE@98..100 "  "
-                    COMMAND_NAME@100..104 "\\end"
-                    L_CURLY@104..105 "{"
-                    WORD@105..114 "enumerate"
-                    R_CURLY@114..115 "}"
-                    WHITESPACE@115..116 " "
-                    WHITESPACE@116..117 "\n"
-                    COMMAND_NAME@117..120 "\\fi"
-                  WHITESPACE@120..121 "\n"
-                  END@121..135
-                    COMMAND_NAME@121..125 "\\end"
-                    CURLY_GROUP_WORD@125..135
-                      L_CURLY@125..126 "{"
-                      KEY@126..134
-                        WORD@126..134 "document"
-                      R_CURLY@134..135 "}"
+              ENVIRONMENT@24..135
+                BEGIN@24..41
+                  COMMAND_NAME@24..30 "\\begin"
+                  CURLY_GROUP_WORD@30..41
+                    L_CURLY@30..31 "{"
+                    KEY@31..39
+                      WORD@31..39 "document"
+                    R_CURLY@39..40 "}"
+                    WHITESPACE@40..41 "\n"
+                TEXT@41..75
+                  WORD@41..45 "This"
+                  WHITESPACE@45..46 " "
+                  WORD@46..48 "is"
+                  WHITESPACE@48..49 " "
+                  WORD@49..51 "an"
+                  WHITESPACE@51..52 " "
+                  WORD@52..56 "asdf"
+                  WHITESPACE@56..57 " "
+                  WORD@57..66 "undefined"
+                  WHITESPACE@66..67 " "
+                  WORD@67..74 "command"
+                  WHITESPACE@74..75 "\n"
+                BLOCK_COMMENT@75..120
+                  COMMAND_NAME@75..83 "\\iffalse"
+                  WHITESPACE@83..84 "\n"
+                  WHITESPACE@84..86 "  "
+                  BLOCK_COMMENT@86..97
+                    COMMAND_NAME@86..94 "\\iffalse"
+                    COMMAND_NAME@94..97 "\\fi"
+                  WHITESPACE@97..98 "\n"
+                  WHITESPACE@98..100 "  "
+                  COMMAND_NAME@100..104 "\\end"
+                  L_CURLY@104..105 "{"
+                  WORD@105..114 "enumerate"
+                  R_CURLY@114..115 "}"
+                  WHITESPACE@115..116 " "
+                  WHITESPACE@116..117 "\n"
+                  COMMAND_NAME@117..120 "\\fi"
+                WHITESPACE@120..121 "\n"
+                END@121..135
+                  COMMAND_NAME@121..125 "\\end"
+                  CURLY_GROUP_WORD@125..135
+                    L_CURLY@125..126 "{"
+                    KEY@126..134
+                      WORD@126..134 "document"
+                    R_CURLY@134..135 "}"
 
         "#]],
     );
@@ -2760,7 +2762,7 @@ fn test_issue_919() {
 "#,
         expect![[r#"
             ROOT@0..217
-              PREAMBLE@0..217
+              PREAMBLE@0..173
                 CLASS_INCLUDE@0..25
                   COMMAND_NAME@0..14 "\\documentclass"
                   CURLY_GROUP_WORD_LIST@14..25
@@ -2793,27 +2795,27 @@ fn test_issue_919() {
                     WHITESPACE@169..170 "\n"
                     R_CURLY@170..171 "}"
                     WHITESPACE@171..173 "\n\n"
-                ENVIRONMENT@173..217
-                  BEGIN@173..194
-                    COMMAND_NAME@173..179 "\\begin"
-                    CURLY_GROUP_WORD@179..194
-                      L_CURLY@179..180 "{"
-                      KEY@180..188
-                        WORD@180..188 "document"
-                      R_CURLY@188..189 "}"
-                      WHITESPACE@189..190 "\n"
-                      WHITESPACE@190..194 "    "
-                  GENERIC_COMMAND@194..202
-                    COMMAND_NAME@194..201 "\\lipsum"
-                    WHITESPACE@201..202 "\n"
-                  END@202..217
-                    COMMAND_NAME@202..206 "\\end"
-                    CURLY_GROUP_WORD@206..217
-                      L_CURLY@206..207 "{"
-                      KEY@207..215
-                        WORD@207..215 "document"
-                      R_CURLY@215..216 "}"
-                      WHITESPACE@216..217 "\n"
+              ENVIRONMENT@173..217
+                BEGIN@173..194
+                  COMMAND_NAME@173..179 "\\begin"
+                  CURLY_GROUP_WORD@179..194
+                    L_CURLY@179..180 "{"
+                    KEY@180..188
+                      WORD@180..188 "document"
+                    R_CURLY@188..189 "}"
+                    WHITESPACE@189..190 "\n"
+                    WHITESPACE@190..194 "    "
+                GENERIC_COMMAND@194..202
+                  COMMAND_NAME@194..201 "\\lipsum"
+                  WHITESPACE@201..202 "\n"
+                END@202..217
+                  COMMAND_NAME@202..206 "\\end"
+                  CURLY_GROUP_WORD@206..217
+                    L_CURLY@206..207 "{"
+                    KEY@207..215
+                      WORD@207..215 "document"
+                    R_CURLY@215..216 "}"
+                    WHITESPACE@216..217 "\n"
 
         "#]],
     );
@@ -3211,46 +3213,46 @@ fn test_structure_enum_item() {
         r#"\begin{enumerate} \item 1 \item[2] 2 \item 3 \end{enumerate}"#,
         expect![[r#"
             ROOT@0..60
-              PREAMBLE@0..60
-                ENVIRONMENT@0..60
-                  BEGIN@0..18
-                    COMMAND_NAME@0..6 "\\begin"
-                    CURLY_GROUP_WORD@6..18
-                      L_CURLY@6..7 "{"
-                      KEY@7..16
-                        WORD@7..16 "enumerate"
-                      R_CURLY@16..17 "}"
-                      WHITESPACE@17..18 " "
-                  ENUM_ITEM@18..26
-                    COMMAND_NAME@18..23 "\\item"
-                    WHITESPACE@23..24 " "
-                    TEXT@24..26
-                      WORD@24..25 "1"
-                      WHITESPACE@25..26 " "
-                  ENUM_ITEM@26..37
-                    COMMAND_NAME@26..31 "\\item"
-                    BRACK_GROUP@31..35
-                      L_BRACK@31..32 "["
-                      TEXT@32..33
-                        WORD@32..33 "2"
-                      R_BRACK@33..34 "]"
-                      WHITESPACE@34..35 " "
-                    TEXT@35..37
-                      WORD@35..36 "2"
-                      WHITESPACE@36..37 " "
-                  ENUM_ITEM@37..45
-                    COMMAND_NAME@37..42 "\\item"
-                    WHITESPACE@42..43 " "
-                    TEXT@43..45
-                      WORD@43..44 "3"
-                      WHITESPACE@44..45 " "
-                  END@45..60
-                    COMMAND_NAME@45..49 "\\end"
-                    CURLY_GROUP_WORD@49..60
-                      L_CURLY@49..50 "{"
-                      KEY@50..59
-                        WORD@50..59 "enumerate"
-                      R_CURLY@59..60 "}"
+              PREAMBLE@0..0
+              ENVIRONMENT@0..60
+                BEGIN@0..18
+                  COMMAND_NAME@0..6 "\\begin"
+                  CURLY_GROUP_WORD@6..18
+                    L_CURLY@6..7 "{"
+                    KEY@7..16
+                      WORD@7..16 "enumerate"
+                    R_CURLY@16..17 "}"
+                    WHITESPACE@17..18 " "
+                ENUM_ITEM@18..26
+                  COMMAND_NAME@18..23 "\\item"
+                  WHITESPACE@23..24 " "
+                  TEXT@24..26
+                    WORD@24..25 "1"
+                    WHITESPACE@25..26 " "
+                ENUM_ITEM@26..37
+                  COMMAND_NAME@26..31 "\\item"
+                  BRACK_GROUP@31..35
+                    L_BRACK@31..32 "["
+                    TEXT@32..33
+                      WORD@32..33 "2"
+                    R_BRACK@33..34 "]"
+                    WHITESPACE@34..35 " "
+                  TEXT@35..37
+                    WORD@35..36 "2"
+                    WHITESPACE@36..37 " "
+                ENUM_ITEM@37..45
+                  COMMAND_NAME@37..42 "\\item"
+                  WHITESPACE@42..43 " "
+                  TEXT@43..45
+                    WORD@43..44 "3"
+                    WHITESPACE@44..45 " "
+                END@45..60
+                  COMMAND_NAME@45..49 "\\end"
+                  CURLY_GROUP_WORD@49..60
+                    L_CURLY@49..50 "{"
+                    KEY@50..59
+                      WORD@50..59 "enumerate"
+                    R_CURLY@59..60 "}"
 
         "#]],
     );

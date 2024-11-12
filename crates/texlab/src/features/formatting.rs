@@ -1,8 +1,15 @@
 mod bibtex_internal;
+mod formatter;
 mod latexindent;
+mod tests;
 
-use base_db::{Formatter, Workspace};
+use crate::features::formatting::formatter::LSTGraph;
+use crate::util::line_index_ext::LineIndexExt;
+use base_db::{Document, Formatter, Workspace};
 use distro::Language;
+use formatter::Formatter as TexFormatter;
+use rowan::TextLen;
+use tempfile::tempdir;
 
 use self::{bibtex_internal::format_bibtex_internal, latexindent::format_with_latexindent};
 
@@ -15,7 +22,7 @@ pub fn format_source_code(
     match document.language {
         Language::Tex => match workspace.config().formatting.tex_formatter {
             Formatter::Null => None,
-            Formatter::Server => None,
+            Formatter::Server => format_with_texlab(workspace, document),
             Formatter::LatexIndent => format_with_latexindent(workspace, document),
         },
         Language::Bib => match workspace.config().formatting.bib_formatter {
@@ -29,5 +36,43 @@ pub fn format_source_code(
         | Language::Latexmkrc
         | Language::Tectonic
         | Language::FileList => None,
+    }
+}
+
+pub fn format_with_texlab(
+    _workspace: &Workspace,
+    document: &Document,
+) -> Option<Vec<lsp_types::TextEdit>> {
+    let root_node = document.data.as_tex()?.root_node();
+    let mut formatter = TexFormatter::new();
+    let output = formatter.visit(&root_node);
+    let mut lstgraph = LSTGraph::new();
+    let _ = lstgraph.visit(&root_node);
+    lstgraph.print_graph();
+
+    let target_dir = tempdir().ok()?;
+
+    let target_file = target_dir
+        .path()
+        .join(if document.language == Language::Bib {
+            "file.bib"
+        } else {
+            "file.tex"
+        });
+
+    std::fs::write(&target_file, &document.text).ok()?;
+
+    let old_text = &document.text;
+    let new_text = output;
+    if new_text.is_empty() {
+        None
+    } else {
+        let line_index = &document.line_index;
+        let start = lsp_types::Position::new(0, 0);
+        let end = line_index.line_col_lsp(old_text.text_len())?;
+        Some(vec![lsp_types::TextEdit {
+            range: lsp_types::Range::new(start, end),
+            new_text,
+        }])
     }
 }
