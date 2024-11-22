@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Allow hovering over symbol-like commands (e. g. `\pi`) to show a unicode preview
+  or a preview image if the client supports it ([#1261](https://github.com/latex-lsp/texlab/issues/1261))
+
+## [5.21.0] - 2024-10-26
+
+### Added
+
 - Support starred variants in "Go to References" ([#1234](https://github.com/latex-lsp/texlab/issues/1234))
 - Add `texlab.latexindent.replacement` setting to allow passing a replacement flag to `latexindent` ([#1222](https://github.com/latex-lsp/texlab/issues/1222))
 - Don't require a label to show section numbers for document symbols ([#910](https://github.com/latex-lsp/texlab/issues/910))
