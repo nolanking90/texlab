@@ -9,6 +9,7 @@ use base_db::{Document, Formatter, Workspace};
 use distro::Language;
 use formatter::Formatter as TexFormatter;
 use rowan::TextLen;
+use syntax::latex;
 use tempfile::tempdir;
 
 use self::{bibtex_internal::format_bibtex_internal, latexindent::format_with_latexindent};
@@ -44,11 +45,12 @@ pub fn format_with_texlab(
     document: &Document,
 ) -> Option<Vec<lsp_types::TextEdit>> {
     let root_node = document.data.as_tex()?.root_node();
+    let path = &document.path;
     let mut formatter = TexFormatter::new();
     let output = formatter.visit(&root_node);
     let mut lstgraph = LSTGraph::new();
-    let _ = lstgraph.visit(&root_node);
-    lstgraph.print_graph();
+    let _ = lstgraph.visit(& latex::SyntaxElement::Node(root_node));
+    lstgraph.print_graph(path);
 
     let target_dir = tempdir().ok()?;
 

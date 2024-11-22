@@ -1,5 +1,6 @@
-use std::fs::File;
 use std::io::prelude::*;
+use std::process::Command;
+use std::{fs::File, path::PathBuf};
 use syntax::latex::{self, LatexLanguage, SyntaxKind};
 
 use petgraph::{
@@ -10,8 +11,21 @@ use petgraph::{
 
 #[allow(dead_code)]
 #[derive(Debug)]
-pub struct Formatter {
-    context: FormatContext,
+struct CodeBlock {
+    lines: Vec<String>
+}
+
+#[allow(dead_code)]
+#[derive(Debug)]
+struct FormattedDocument {
+    doc: Vec<CodeBlock>
+}
+
+#[allow(dead_code)]
+#[derive(Debug)]
+enum Combinator {
+    Juxtapose,
+    Stack,
 }
 
 #[allow(dead_code)]
@@ -19,6 +33,12 @@ pub struct Formatter {
 struct FormatContext {
     tabstop: u8,
     indent_level: usize,
+}
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub struct Formatter {
+    context: FormatContext,
 }
 
 #[allow(dead_code)]
@@ -32,6 +52,7 @@ impl Formatter {
         }
     }
 
+    // Change to SyntaxElement? Need to get Tokens too.
     pub fn visit(&mut self, node: &latex::SyntaxNode) -> String {
         match node.kind() {
             SyntaxKind::ROOT => self.visit_root(node),
@@ -321,28 +342,65 @@ impl LSTGraph {
         LSTGraph { graph }
     }
 
-    pub fn visit(&mut self, node: &latex::SyntaxNode) -> NodeIndex {
-        let text = node.text().to_string();
-        let mut output = format!("{:?}", node.kind());
-        if text.len() < 50 {
-            output.push_str(text.as_str());
+    pub fn visit(&mut self, element: &latex::SyntaxElement) -> NodeIndex {
+        let mut output = "".to_string();
+        match element {
+            latex::SyntaxElement::Node(node) => {
+                output.push_str(format!("Kind: {:?}", node.kind()).as_str());
+                let graph_node = self.graph.add_node(output);
+                for child in node.children_with_tokens() {
+                    let child_node = self.visit(&child);
+                    self.graph.add_edge(graph_node, child_node, "".to_string());
+                }
+                graph_node
+            }
+            latex::SyntaxElement::Token(token) => {
+                output.push_str(token.text());
+                self.graph.add_node(output)
+            }
         }
-
-        let graph_node = self.graph.add_node(output);
-
-        for child in node.children() {
-            let child_node = self.visit(&child);
-            self.graph.add_edge(graph_node, child_node, "".to_string());
-        }
-
-        graph_node
     }
 
-    pub fn print_graph(&self) {
-        let mut file = File::create("graph.dot").unwrap();
+    pub fn print_graph(&self, path: &Option<PathBuf>) {
+        let dot_filename = match path.clone() {
+            Some(mut path) => {
+                path.set_file_name("graph.dot");
+                path
+            }
+            None => PathBuf::from("graph.dot"),
+        };
+
+        let mut file = File::create(dot_filename.clone()).unwrap();
         _ = file.write_fmt(format_args!(
             "{:?}",
             Dot::with_config(&self.graph, &[DotConfig::EdgeNoLabel])
         ));
+
+        let png_filename = match path.clone() {
+            Some(mut path) => {
+                path.set_file_name("graph.png");
+                path
+            }
+            None => PathBuf::from("graph.png"),
+        };
+
+        let output = Command::new("dot")
+            .args([
+                "-Tpng",
+                dot_filename.to_str().unwrap(),
+                "-Nshape=box",
+                "-o",
+                png_filename.to_str().unwrap(),
+            ])
+            .spawn();
+
+        match output {
+            Ok(_) => log::debug!(
+                "Graph of {} generated successfully at {}",
+                dot_filename.to_str().unwrap(),
+                png_filename.to_str().unwrap()
+            ),
+            Err(e) => log::debug!("Failed to execute dot command: {}", e),
+        }
     }
 }
