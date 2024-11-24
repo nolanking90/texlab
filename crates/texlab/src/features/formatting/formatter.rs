@@ -1,7 +1,7 @@
 use std::io::prelude::*;
 use std::process::Command;
 use std::{fs::File, path::PathBuf};
-use syntax::latex::{self, LatexLanguage, SyntaxKind};
+use syntax::latex::{self, SyntaxKind};
 
 use petgraph::{
     dot::{Config as DotConfig, Dot},
@@ -12,20 +12,15 @@ use petgraph::{
 #[allow(dead_code)]
 #[derive(Debug)]
 struct CodeBlock {
-    lines: Vec<String>
+    text: String,
+    kind: CodeKind,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
-struct FormattedDocument {
-    doc: Vec<CodeBlock>
-}
-
-#[allow(dead_code)]
-#[derive(Debug)]
-enum Combinator {
-    Juxtapose,
-    Stack,
+enum CodeKind {
+    Command,
+    Argument,
+    Comment
 }
 
 #[allow(dead_code)]
@@ -33,6 +28,7 @@ enum Combinator {
 struct FormatContext {
     tabstop: u8,
     indent_level: usize,
+    doc: Vec<CodeBlock>,
 }
 
 #[allow(dead_code)]
@@ -48,130 +44,46 @@ impl Formatter {
             context: FormatContext {
                 tabstop: 0,
                 indent_level: 0,
+                doc: Vec::new(),
             },
         }
     }
 
-    // Change to SyntaxElement? Need to get Tokens too.
-    pub fn visit(&mut self, node: &latex::SyntaxNode) -> String {
+    pub fn visit(&mut self, element: &latex::SyntaxElement) -> String {
+        match element {
+            latex::SyntaxElement::Node(node) => self.visit_node(node),
+            latex::SyntaxElement::Token(token) => self.visit_token(token)
+        }
+    }
+
+    fn visit_token(&self, token: &latex::SyntaxToken) -> String {
+        token.text().to_string()
+    }
+
+    fn visit_node(&mut self, node: &latex::SyntaxNode) -> String {
         match node.kind() {
-            SyntaxKind::ROOT => self.visit_root(node),
-            SyntaxKind::ENVIRONMENT => self.visit_environment(node),
-            SyntaxKind::BEGIN => self.visit_begin(node),
-            SyntaxKind::END => self.visit_end(node),
-            SyntaxKind::SECTION => self.visit_section(node),
-            SyntaxKind::SUBSECTION => self.visit_subsection(node),
-            SyntaxKind::LABEL_DEFINITION => self.visit_label_definition(node),
-            SyntaxKind::WHITESPACE => self.visit_whitespace(node),
-            SyntaxKind::COMMENT => self.visit_comment(node),
-            SyntaxKind::EQUALITY_SIGN => self.visit_equality_sign(node),
-            SyntaxKind::COMMAND_NAME => self.visit_command_name(node),
-            SyntaxKind::PREAMBLE => self.visit_preamble(node),
-            SyntaxKind::TEXT => self.visit_text(node),
-            SyntaxKind::KEY => self.visit_key(node),
-            SyntaxKind::CURLY_GROUP => self.visit_curly_group(node),
-            SyntaxKind::CURLY_GROUP_WORD => self.visit_curly_group_word(node),
-            SyntaxKind::CURLY_GROUP_WORD_LIST => self.visit_curly_group_word_list(node),
-            SyntaxKind::PACKAGE_INCLUDE => self.visit_package_include(node),
-            SyntaxKind::CLASS_INCLUDE => self.visit_class_include(node),
-
-            SyntaxKind::EQUATION => todo!(),
-            SyntaxKind::PART => todo!(),
-            SyntaxKind::CHAPTER => todo!(),
-            SyntaxKind::SUBSUBSECTION => todo!(),
-            SyntaxKind::PARAGRAPH => todo!(),
-            SyntaxKind::SUBPARAGRAPH => todo!(),
-            SyntaxKind::ERROR => todo!(),
-            SyntaxKind::VERBATIM => todo!(),
-            SyntaxKind::L_CURLY => todo!(),
-            SyntaxKind::R_CURLY => todo!(),
-            SyntaxKind::L_BRACK => todo!(),
-            SyntaxKind::R_BRACK => todo!(),
-            SyntaxKind::L_PAREN => todo!(),
-            SyntaxKind::R_PAREN => todo!(),
-            SyntaxKind::COMMA => todo!(),
-            SyntaxKind::WORD => todo!(),
-            SyntaxKind::DOLLAR => todo!(),
-            SyntaxKind::VALUE => todo!(),
-            SyntaxKind::KEY_VALUE_PAIR => todo!(),
-            SyntaxKind::KEY_VALUE_BODY => todo!(),
-            SyntaxKind::CURLY_GROUP_COMMAND => todo!(),
-            SyntaxKind::CURLY_GROUP_KEY_VALUE => todo!(),
-            SyntaxKind::BRACK_GROUP => todo!(),
-            SyntaxKind::BRACK_GROUP_WORD => todo!(),
-            SyntaxKind::BRACK_GROUP_KEY_VALUE => todo!(),
-            SyntaxKind::PAREN_GROUP => todo!(),
-            SyntaxKind::MIXED_GROUP => todo!(),
-            SyntaxKind::GENERIC_COMMAND => todo!(),
-            SyntaxKind::ENUM_ITEM => todo!(),
-            SyntaxKind::FORMULA => todo!(),
-            SyntaxKind::CAPTION => todo!(),
-            SyntaxKind::CITATION => todo!(),
-            SyntaxKind::LATEX_INCLUDE => todo!(),
-            SyntaxKind::BIBLATEX_INCLUDE => todo!(),
-            SyntaxKind::BIBTEX_INCLUDE => todo!(),
-            SyntaxKind::GRAPHICS_INCLUDE => todo!(),
-            SyntaxKind::SVG_INCLUDE => todo!(),
-            SyntaxKind::INKSCAPE_INCLUDE => todo!(),
-            SyntaxKind::VERBATIM_INCLUDE => todo!(),
-            SyntaxKind::IMPORT => todo!(),
-            SyntaxKind::LABEL_REFERENCE => todo!(),
-            SyntaxKind::LABEL_REFERENCE_RANGE => todo!(),
-            SyntaxKind::LABEL_NUMBER => todo!(),
-            SyntaxKind::OLD_COMMAND_DEFINITION => todo!(),
-            SyntaxKind::NEW_COMMAND_DEFINITION => todo!(),
-            SyntaxKind::MATH_OPERATOR => todo!(),
-            SyntaxKind::GLOSSARY_ENTRY_DEFINITION => todo!(),
-            SyntaxKind::GLOSSARY_ENTRY_REFERENCE => todo!(),
-            SyntaxKind::ACRONYM_DEFINITION => todo!(),
-            SyntaxKind::ACRONYM_DECLARATION => todo!(),
-            SyntaxKind::ACRONYM_REFERENCE => todo!(),
-            SyntaxKind::THEOREM_DEFINITION_AMSTHM => todo!(),
-            SyntaxKind::THEOREM_DEFINITION_THMTOOLS => todo!(),
-            SyntaxKind::COLOR_REFERENCE => todo!(),
-            SyntaxKind::COLOR_DEFINITION => todo!(),
-            SyntaxKind::COLOR_SET_DEFINITION => todo!(),
-            SyntaxKind::TIKZ_LIBRARY_IMPORT => todo!(),
-            SyntaxKind::ENVIRONMENT_DEFINITION => todo!(),
-            SyntaxKind::GRAPHICS_PATH => todo!(),
-            SyntaxKind::BLOCK_COMMENT => todo!(),
-            SyntaxKind::BIBITEM => todo!(),
-            SyntaxKind::TOC_CONTENTS_LINE => todo!(),
-            SyntaxKind::TOC_NUMBER_LINE => todo!(),
+           SyntaxKind::KEY => self.visit_key(node), 
+            _ => self.visit_children(node)
         }
     }
 
-    fn visit_begin(&mut self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
-        let indent = "\t".repeat(self.context.indent_level);
-        let child = node.first_child();
-        let word = match child {
-            Some(child) => self.visit(&child),
-            None => "".to_string(),
-        };
-        let mut newline = "".to_string();
-        if word == *"{document}" {
-            newline.push_str("\n\n");
-        } else {
-            self.context.indent_level += 1;
+    fn visit_children(&mut self, node: &latex::SyntaxNode) -> String {
+        let mut output = "".to_string();
+        for child in node.children_with_tokens() {
+            output.push_str(&self.visit(&child));
         }
-
-        format!("{newline}{indent}\\begin{}", word)
+        output
     }
 
-    fn visit_end(&mut self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
-        if self.context.indent_level > 0 {
-            self.context.indent_level -= 1;
-        }
-        let indent = "\t".repeat(self.context.indent_level);
-        let child = node.first_child();
-        let word = match child {
-            Some(child) => self.visit(&child),
-            None => "".to_string(),
-        };
-        format!("\n{indent}\\end{}", word)
+    fn visit_begin(&mut self, _node: &latex::SyntaxNode) -> String {
+        todo!()
     }
 
-    fn visit_curly_group_word(&self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_end(&mut self, _node: &latex::SyntaxNode) -> String {
+        todo!()
+    }
+
+    fn visit_curly_group_word(&self, node: &latex::SyntaxNode) -> String {
         let child = node.first_child();
         let word = match child {
             Some(child) => child.text().to_string(),
@@ -180,17 +92,17 @@ impl Formatter {
         format!("{{{}}}", word)
     }
 
-    fn visit_environment(&mut self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_environment(&mut self, node: &latex::SyntaxNode) -> String {
         let mut output = "".to_string();
-        for child in node.children() {
+        for child in node.children_with_tokens() {
             output.push_str(&self.visit(&child));
         }
         output
     }
 
-    fn visit_label_definition(&mut self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_label_definition(&mut self, node: &latex::SyntaxNode) -> String {
         let mut output = "".to_string();
-        for child in node.children() {
+        for child in node.children_with_tokens() {
             output.push_str(&self.visit(&child));
         }
         if let Some(sibling) = node.next_sibling() {
@@ -204,9 +116,9 @@ impl Formatter {
         format!("\\label{}", output)
     }
 
-    fn visit_curly_group(&mut self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_curly_group(&mut self, node: &latex::SyntaxNode) -> String {
         let mut output = "{".to_string();
-        for child in node.children() {
+        for child in node.children_with_tokens() {
             output.push_str(&self.visit(&child));
         }
         output.push('}');
@@ -219,7 +131,7 @@ impl Formatter {
         output
     }
 
-    fn visit_text(&self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_text(&self, node: &latex::SyntaxNode) -> String {
         // This might be more robust if we use regex
         node.text()
             .to_string()
@@ -228,11 +140,11 @@ impl Formatter {
             .to_string()
     }
 
-    fn visit_equality_sign(&self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_equality_sign(&self, node: &latex::SyntaxNode) -> String {
         node.text().to_string()
     }
 
-    fn visit_section(&mut self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_section(&mut self, node: &latex::SyntaxNode) -> String {
         //TODO: Check for star version
         let mut output = "".to_string();
         let mut newline = "".to_string();
@@ -243,14 +155,14 @@ impl Formatter {
                 newline.push('\n');
             }
         }
-        for child in node.children() {
+        for child in node.children_with_tokens() {
             output.push_str(&self.visit(&child));
         }
         self.context.indent_level -= 1;
         format!("\n{newline}{indent}\\section{}", output)
     }
 
-    fn visit_subsection(&mut self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_subsection(&mut self, node: &latex::SyntaxNode) -> String {
         //TODO: Check for star version
         let mut output = "".to_string();
         let mut newline = "".to_string();
@@ -261,40 +173,40 @@ impl Formatter {
                 newline.push('\n');
             }
         }
-        for child in node.children() {
+        for child in node.children_with_tokens() {
             output.push_str(&self.visit(&child));
         }
         self.context.indent_level -= 1;
         format!("\n{newline}{indent}\\subsection{}", output)
     }
 
-    fn visit_whitespace(&self, _node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_whitespace(&self, _node: &latex::SyntaxNode) -> String {
         todo!()
     }
 
-    fn visit_comment(&self, _node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_comment(&self, _node: &latex::SyntaxNode) -> String {
         todo!()
     }
 
-    fn visit_command_name(&self, _node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_command_name(&self, _node: &latex::SyntaxNode) -> String {
         todo!()
     }
 
-    fn visit_preamble(&mut self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_preamble(&mut self, node: &latex::SyntaxNode) -> String {
         let mut output = "".to_string();
-        for child in node.children() {
+        for child in node.children_with_tokens() {
             output.push_str(&self.visit(&child));
         }
         output
     }
 
-    fn visit_key(&self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_key(&self, node: &latex::SyntaxNode) -> String {
         node.text().to_string()
     }
 
-    fn visit_curly_group_word_list(&mut self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_curly_group_word_list(&mut self, node: &latex::SyntaxNode) -> String {
         let mut output = "{".to_string();
-        for child in node.children() {
+        for child in node.children_with_tokens() {
             output.push_str(&self.visit(&child));
         }
         output.push('}');
@@ -307,25 +219,25 @@ impl Formatter {
         output
     }
 
-    fn visit_class_include(&mut self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_class_include(&mut self, node: &latex::SyntaxNode) -> String {
         let mut output = "".to_string();
-        for child in node.children() {
+        for child in node.children_with_tokens() {
             output.push_str(&self.visit(&child));
         }
         format!("\\documentclass{}", output)
     }
 
-    fn visit_package_include(&mut self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_package_include(&mut self, node: &latex::SyntaxNode) -> String {
         let mut output = "".to_string();
-        for child in node.children() {
+        for child in node.children_with_tokens() {
             output.push_str(&self.visit(&child));
         }
         format!("\n\\usepackage{}", output)
     }
 
-    fn visit_root(&mut self, node: &rowan::SyntaxNode<LatexLanguage>) -> String {
+    fn visit_root(&mut self, node: &latex::SyntaxNode) -> String {
         let mut output = "".to_string();
-        for child in node.children() {
+        for child in node.children_with_tokens() {
             output.push_str(&self.visit(&child));
         }
         output
