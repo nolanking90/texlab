@@ -99,7 +99,7 @@ dependencies = [
  "percent-encoding",
  "regex",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "shellexpand",
  "syntax",
  "titlecase",
@@ -133,7 +133,7 @@ dependencies = [
  "itertools 0.13.0",
  "parser",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "syntax",
  "unicode-normalization",
 ]
@@ -152,9 +152,9 @@ checksum = "b4682ae6287fcf752ecaabbfcc7b6f9b72aa33933dc23a554d853aea8eea8635"
 
 [[package]]
 name = "bstr"
-version = "1.10.0"
+version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40723b8fb387abc38f4f4a37c09073622e41dd12327033091ef8950659e6dc0c"
+checksum = "1a68f1f47cdf0ec8ee4b941b2eee2a80cb796db73118c0dd09ac63fbe405be22"
 dependencies = [
  "memchr",
  "regex-automata",
@@ -235,7 +235,7 @@ dependencies = [
  "itertools 0.13.0",
  "parser",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "syntax",
  "titlecase",
  "unicode-normalization",
@@ -244,9 +244,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.20"
+version = "4.5.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b97f376d85a664d5837dbae44bf546e6477a679ff6610010f17276f686d867e8"
+checksum = "fb3b4b9e5a7c7514dfa52869339ee98b3156b0bfb4e8a77c4ff4babb64b1604f"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -254,9 +254,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.20"
+version = "4.5.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19bc80abd44e4bed93ca373a0704ccbd1b710dc5749406201bb018272808dc54"
+checksum = "b17a95aa67cc7b5ebd32aa5370189aa0d79069ef1c64ce893bd30fb24bff20ec"
 dependencies = [
  "anstream",
  "anstyle",
@@ -302,7 +302,7 @@ dependencies = [
  "libc",
  "log",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "syntax",
  "test-utils",
  "thiserror 2.0.3",
@@ -337,7 +337,7 @@ dependencies = [
  "parser",
  "rayon",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "syntax",
  "test-utils",
  "url",
@@ -351,7 +351,7 @@ dependencies = [
  "flate2",
  "itertools 0.13.0",
  "once_cell",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "serde",
  "serde_json",
 ]
@@ -453,7 +453,7 @@ dependencies = [
  "base-db",
  "itertools 0.13.0",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "syntax",
  "test-utils",
 ]
@@ -473,7 +473,7 @@ dependencies = [
  "once_cell",
  "regex",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "syntax",
  "test-utils",
  "url",
@@ -511,7 +511,7 @@ name = "distro"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
 ]
 
 [[package]]
@@ -596,9 +596,9 @@ dependencies = [
 
 [[package]]
 name = "flate2"
-version = "1.0.34"
+version = "1.0.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1b589b4dc103969ad3cf85c950899926ec64300a1a46d76c03a6072957036f0"
+checksum = "c936bfdafb507ebbf50b8074c54fa31c5be9a1e7e5f467dd659697041407d07c"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
@@ -749,7 +749,7 @@ dependencies = [
  "base-db",
  "expect-test",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "test-utils",
 ]
 
@@ -868,15 +868,15 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.162"
+version = "0.2.167"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18d287de67fe55fd7e1581fe933d965a5a9477b38e949cfa9f8574ef01506398"
+checksum = "09d6582e104315a817dff97f75133544b2e094ee22447d2acf4a74e189ba06fc"
 
 [[package]]
 name = "line-index"
 version = "0.0.0"
 dependencies = [
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "text-size",
 ]
 
@@ -1134,7 +1134,7 @@ dependencies = [
  "pathdiff",
  "regex",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "syntax",
  "tempfile",
  "versions",
@@ -1142,9 +1142,9 @@ dependencies = [
 
 [[package]]
 name = "pathdiff"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d61c5ce1153ab5b689d0c074c4e7fc613e942dfb7dd9eea5ab202d2ad91fe361"
+checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
 
 [[package]]
 name = "percent-encoding"
@@ -1306,7 +1306,7 @@ version = "0.0.0"
 dependencies = [
  "base-db",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "syntax",
  "test-utils",
 ]
@@ -1347,7 +1347,7 @@ dependencies = [
  "base-db",
  "parser",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "syntax",
  "test-utils",
 ]
@@ -1372,9 +1372,9 @@ checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "rustc-hash"
-version = "2.0.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "583034fd73374156e66797ed8e5b0d5690409c9226b22d87cb7f19821c05d152"
+checksum = "c7fb8039b3032c191086b10f11f319a6e99e1e82889c5cc6046f515c9db1d497"
 
 [[package]]
 name = "rustix"
@@ -1438,9 +1438,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.132"
+version = "1.0.133"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d726bfaff4b320266d395898905d0eba0345aae23b54aee3a737e260fd46db03"
+checksum = "c7fceb2473b9166b2294ef05efcb65a3db80803f0b03ef86a5fc88a2b85ee377"
 dependencies = [
  "itoa",
  "memchr",
@@ -1536,7 +1536,7 @@ version = "0.0.0"
 dependencies = [
  "itertools 0.13.0",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
 ]
 
 [[package]]
@@ -1599,7 +1599,7 @@ dependencies = [
  "regex",
  "rename",
  "rowan",
- "rustc-hash 2.0.0",
+ "rustc-hash 2.1.0",
  "serde",
  "serde_json",
  "serde_regex",

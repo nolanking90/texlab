@@ -114,6 +114,7 @@ impl<'a> Parser<'a> {
             Token::Pipe | Token::Word | Token::Comma => self.text(context),
             Token::Eq => self.equal_sign(),
             Token::Dollar => self.formula(),
+            Token::Href => self.eat(),
             Token::CommandName(name) => match name {
                 CommandName::Generic => self.generic_command(),
                 CommandName::BeginEnvironment if context.allow_environment => self.environment(),
