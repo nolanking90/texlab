@@ -9,42 +9,35 @@ use petgraph::{
     Graph,
 };
 
-#[allow(dead_code)]
-#[derive(Debug)]
 struct CodeBlock {
-    text: String,
-    kind: CodeKind,
+    lines: Vec<String>,
 }
 
-#[derive(Debug)]
-enum CodeKind {
-    Command,
-    Argument,
-    Comment
+enum Combinator {
+    Horizontal,
+    Veritical,
+    CodeBlock(CodeBlock),
 }
 
-#[allow(dead_code)]
-#[derive(Debug)]
+struct FormattedDocument {
+    lines: Vec<Combinator>
+}
+
 struct FormatContext {
     tabstop: u8,
     indent_level: usize,
-    doc: Vec<CodeBlock>,
 }
 
-#[allow(dead_code)]
-#[derive(Debug)]
 pub struct Formatter {
     context: FormatContext,
 }
 
-#[allow(dead_code)]
 impl Formatter {
     pub fn new() -> Self {
         Self {
             context: FormatContext {
-                tabstop: 0,
+                tabstop: 2,
                 indent_level: 0,
-                doc: Vec::new(),
             },
         }
     }
