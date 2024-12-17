@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::io::prelude::*;
 use std::process::Command;
 use std::{fs::File, path::PathBuf};

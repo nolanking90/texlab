@@ -1,13 +1,10 @@
 mod bibtex_internal;
-mod formatter;
 mod latexindent;
-mod tests;
 
-use crate::features::formatting::formatter::LSTGraph;
 use crate::util::line_index_ext::LineIndexExt;
 use base_db::{Document, Formatter, Workspace};
 use distro::Language;
-use formatter::Formatter as TexFormatter;
+use formatter::{Formatter as TexFormatter, LSTGraph};
 use rowan::TextLen;
 use syntax::latex;
 use tempfile::tempdir;
