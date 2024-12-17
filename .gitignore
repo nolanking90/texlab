@@ -7,3 +7,4 @@ crates/**/Cargo.lock
 Cargo.lock
 crates/formatter/todo.md
 crates/texlab/src/features/formatting/todo.md
+Cargo.lock
