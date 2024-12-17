@@ -5,3 +5,5 @@ tarpaulin-report.html
 crates/**/Cargo.lock
 *.snap.new
 Cargo.lock
+crates/formatter/todo.md
+crates/texlab/src/features/formatting/todo.md
