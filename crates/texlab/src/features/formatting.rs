@@ -44,8 +44,9 @@ pub fn format_with_texlab(
     let root_node = document.data.as_tex()?.root_node();
     let path = &document.path;
     let mut formatter = TexFormatter::new();
-    let mut output = "Formatted Text\n".to_string();
+    let mut output = "".to_string();
     output.push_str(&formatter.visit(&latex::SyntaxElement::Node(root_node.clone())));
+    //output.push_str("\nFormatted\n");
     let mut lstgraph = LSTGraph::new();
     let _ = lstgraph.visit(& latex::SyntaxElement::Node(root_node));
     lstgraph.print_graph(path);

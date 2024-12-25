@@ -112,7 +112,7 @@ impl<'a> Parser<'a> {
                 self.builder.finish_node();
             }
             Token::Pipe | Token::Word | Token::Comma => self.text(context),
-            Token::Eq => self.equal_sign(),
+            Token::Eq => self.eat(),
             Token::Dollar => self.formula(),
             Token::Href => self.eat(),
             Token::CommandName(name) => match name {
@@ -1298,13 +1298,6 @@ impl<'a> Parser<'a> {
             self.curly_group();
         }
 
-        self.builder.finish_node();
-    }
-
-    fn equal_sign(&mut self) {
-        self.builder.start_node(EQUALITY_SIGN.into());
-        self.eat();
-        self.trivia();
         self.builder.finish_node();
     }
 }

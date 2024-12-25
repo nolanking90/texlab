@@ -10,27 +10,19 @@ use petgraph::{
     Graph,
 };
 
-struct CodeBlock {
-    lines: Vec<String>,
-}
-
-enum Combinator {
-    Horizontal,
-    Veritical,
-    CodeBlock(CodeBlock),
-}
-
-struct FormattedDocument {
-    lines: Vec<Combinator>
-}
-
+#[derive(Default)]
 struct FormatContext {
     tabstop: u8,
     indent_level: usize,
 }
 
+#[derive(Default)]
 pub struct Formatter {
     context: FormatContext,
+}
+
+fn indent_str(indent_level: usize, tabstop: u8) -> String {
+    " ".repeat(indent_level * tabstop as usize)
 }
 
 impl Formatter {
@@ -46,7 +38,7 @@ impl Formatter {
     pub fn visit(&mut self, element: &latex::SyntaxElement) -> String {
         match element {
             latex::SyntaxElement::Node(node) => self.visit_node(node),
-            latex::SyntaxElement::Token(token) => self.visit_token(token)
+            latex::SyntaxElement::Token(token) => self.visit_token(token),
         }
     }
 
@@ -56,8 +48,13 @@ impl Formatter {
 
     fn visit_node(&mut self, node: &latex::SyntaxNode) -> String {
         match node.kind() {
-           SyntaxKind::KEY => self.visit_key(node), 
-            _ => self.visit_children(node)
+            SyntaxKind::PREAMBLE => self.visit_preamble(node),
+            SyntaxKind::BRACK_GROUP_KEY_VALUE => self.visit_brack_group_key_value(node),
+            SyntaxKind::CURLY_GROUP_WORD_LIST => self.visit_curly_group_word_list(node),
+            SyntaxKind::KEY_VALUE_BODY => self.visit_key_value_body(node),
+            SyntaxKind::KEY_VALUE_PAIR => self.visit_key_value_pair(node),
+            SyntaxKind::NEW_COMMAND_DEFINITION => self.visit_new_command(node),
+            _ => self.visit_children(node),
         }
     }
 
@@ -69,164 +66,67 @@ impl Formatter {
         output
     }
 
-    fn visit_begin(&mut self, _node: &latex::SyntaxNode) -> String {
-        todo!()
-    }
-
-    fn visit_end(&mut self, _node: &latex::SyntaxNode) -> String {
-        todo!()
-    }
-
-    fn visit_curly_group_word(&self, node: &latex::SyntaxNode) -> String {
-        let child = node.first_child();
-        let word = match child {
-            Some(child) => child.text().to_string(),
-            None => "".to_string(),
-        };
-        format!("{{{}}}", word)
-    }
-
-    fn visit_environment(&mut self, node: &latex::SyntaxNode) -> String {
-        let mut output = "".to_string();
-        for child in node.children_with_tokens() {
-            output.push_str(&self.visit(&child));
-        }
-        output
-    }
-
-    fn visit_label_definition(&mut self, node: &latex::SyntaxNode) -> String {
-        let mut output = "".to_string();
-        for child in node.children_with_tokens() {
-            output.push_str(&self.visit(&child));
-        }
-        if let Some(sibling) = node.next_sibling() {
-            if sibling.kind() == latex::TEXT {
-                let indent = "\t".repeat(self.context.indent_level);
-                output.push_str(format!("\n{indent}").as_str());
-            } else {
-                output.push('\n');
-            }
-        }
-        format!("\\label{}", output)
-    }
-
-    fn visit_curly_group(&mut self, node: &latex::SyntaxNode) -> String {
-        let mut output = "{".to_string();
-        for child in node.children_with_tokens() {
-            output.push_str(&self.visit(&child));
-        }
-        output.push('}');
-        if let Some(sibling) = node.next_sibling() {
-            if sibling.kind() == latex::TEXT {
-                let indent = "\t".repeat(self.context.indent_level);
-                output.push_str(format!("\n{indent}").as_str());
-            }
-        }
-        output
-    }
-
-    fn visit_text(&self, node: &latex::SyntaxNode) -> String {
-        // This might be more robust if we use regex
-        node.text()
-            .to_string()
-            .trim_start_matches(['\n', '\t'])
-            .trim_end_matches(['\n', '\t'])
-            .to_string()
-    }
-
-    fn visit_equality_sign(&self, node: &latex::SyntaxNode) -> String {
-        node.text().to_string()
-    }
-
-    fn visit_section(&mut self, node: &latex::SyntaxNode) -> String {
-        //TODO: Check for star version
-        let mut output = "".to_string();
-        let mut newline = "".to_string();
-        let indent = "\t".repeat(self.context.indent_level);
-        self.context.indent_level += 1;
-        if let Some(sibling) = node.prev_sibling() {
-            if sibling.kind() != SyntaxKind::END {
-                newline.push('\n');
-            }
-        }
-        for child in node.children_with_tokens() {
-            output.push_str(&self.visit(&child));
-        }
-        self.context.indent_level -= 1;
-        format!("\n{newline}{indent}\\section{}", output)
-    }
-
-    fn visit_subsection(&mut self, node: &latex::SyntaxNode) -> String {
-        //TODO: Check for star version
-        let mut output = "".to_string();
-        let mut newline = "".to_string();
-        let indent = "\t".repeat(self.context.indent_level);
-        self.context.indent_level += 1;
-        if let Some(sibling) = node.prev_sibling() {
-            if sibling.kind() != SyntaxKind::END {
-                newline.push('\n');
-            }
-        }
-        for child in node.children_with_tokens() {
-            output.push_str(&self.visit(&child));
-        }
-        self.context.indent_level -= 1;
-        format!("\n{newline}{indent}\\subsection{}", output)
-    }
-
-    fn visit_whitespace(&self, _node: &latex::SyntaxNode) -> String {
-        todo!()
-    }
-
-    fn visit_comment(&self, _node: &latex::SyntaxNode) -> String {
-        todo!()
-    }
-
-    fn visit_command_name(&self, _node: &latex::SyntaxNode) -> String {
-        todo!()
-    }
-
     fn visit_preamble(&mut self, node: &latex::SyntaxNode) -> String {
-        let mut output = "".to_string();
-        for child in node.children_with_tokens() {
-            output.push_str(&self.visit(&child));
+        let mut output = String::new();
+
+        for child in node.children() {
+            match child.kind() {
+                SyntaxKind::PACKAGE_INCLUDE | SyntaxKind::CLASS_INCLUDE => {
+                    let line = self.visit_include(&child);
+                    output.push_str(&line);
+                    output.push('\n');
+                }
+                _ => {
+                    output.push_str(&self.visit(&child.into()));
+                }
+            }
         }
+
+        output.push('\n');
         output
+    }
+
+    fn visit_include(&mut self, node: &latex::SyntaxNode) -> String {
+        let indent = indent_str(self.context.indent_level, self.context.tabstop);
+        let cmd = node.first_token().unwrap().to_string();
+        let mut options = String::new();
+        let mut package_name = String::new();
+        let mut newline = String::new();
+
+        for child in node.children() {
+            match child.kind() {
+                SyntaxKind::BRACK_GROUP_KEY_VALUE => {
+                    let raw = self.visit_node(&child);
+                    options = raw.trim().to_string();
+                }
+                SyntaxKind::CURLY_GROUP_WORD_LIST => {
+                    let raw = self.visit_node(&child);
+                    package_name = raw.trim().to_string();
+                }
+                _ => {}
+            }
+        }
+        if cmd == "\\documentclass" {
+            newline.push('\n');
+        }
+
+        format!("{}{}{}{{{}}}{}", indent, cmd, options, package_name, newline)
     }
 
     fn visit_key(&self, node: &latex::SyntaxNode) -> String {
-        node.text().to_string()
+        node.text().to_string().trim().to_string()
     }
 
     fn visit_curly_group_word_list(&mut self, node: &latex::SyntaxNode) -> String {
-        let mut output = "{".to_string();
-        for child in node.children_with_tokens() {
-            output.push_str(&self.visit(&child));
-        }
-        output.push('}');
-        if let Some(sibling) = node.next_sibling() {
-            if sibling.kind() == latex::TEXT {
-                let indent = "\t".repeat(self.context.indent_level);
-                output.push_str(format!("\n{indent}").as_str());
+        let mut words = Vec::new();
+
+        for child in node.children() {
+            if child.kind() == SyntaxKind::KEY {
+                words.push(self.visit_key(&child));
             }
         }
-        output
-    }
-
-    fn visit_class_include(&mut self, node: &latex::SyntaxNode) -> String {
-        let mut output = "".to_string();
-        for child in node.children_with_tokens() {
-            output.push_str(&self.visit(&child));
-        }
-        format!("\\documentclass{}", output)
-    }
-
-    fn visit_package_include(&mut self, node: &latex::SyntaxNode) -> String {
-        let mut output = "".to_string();
-        for child in node.children_with_tokens() {
-            output.push_str(&self.visit(&child));
-        }
-        format!("\n\\usepackage{}", output)
+        let content = words.join(", ");
+        content.to_string()
     }
 
     fn visit_root(&mut self, node: &latex::SyntaxNode) -> String {
@@ -236,8 +136,144 @@ impl Formatter {
         }
         output
     }
+
+    fn visit_brack_group_key_value(
+        &mut self,
+        node: &rowan::SyntaxNode<latex::LatexLanguage>,
+    ) -> String {
+        let mut pairs = Vec::new();
+
+        for child in node.children_with_tokens() {
+            if child.kind() == SyntaxKind::KEY_VALUE_BODY {
+                pairs.push(self.visit_node(child.as_node().unwrap()));
+            }
+        }
+
+        format!("[{}]", pairs.join(", "))
+    }
+
+    fn visit_key_value_pair(&mut self, node: &latex::SyntaxNode) -> String {
+        let mut key = String::new();
+        let mut val = String::new();
+        let mut output = String::new();
+
+        for child in node.children() {
+            match child.kind() {
+                SyntaxKind::KEY => {
+                    key.push_str(&self.visit_key(&child));
+                }
+                SyntaxKind::VALUE => {
+                    val.push_str(&self.visit_value(&child));
+                }
+                _ => {}
+            }
+        }
+
+        output.push_str(&key);
+        if !val.is_empty() {
+            output.push_str(" = ");
+            output.push_str(&val);
+        }
+        output
+    }
+
+    fn visit_key_value_body(&mut self, node: &latex::SyntaxNode) -> String {
+        let mut pairs = Vec::new();
+        let indent_level = self.context.indent_level + 1;
+        let tab_stop = self.context.tabstop;
+        let indent = indent_str(indent_level, tab_stop);
+
+        for child in node.children() {
+            if child.kind() == SyntaxKind::KEY_VALUE_PAIR {
+                pairs.push(self.visit_key_value_pair(&child));
+            }
+        }
+
+        if pairs.len() > 3 {
+            let mut seperator = ",\n".to_string();
+            seperator.push_str(&indent);
+            let mut output = "\n".to_string();
+            output.push_str(&indent);
+            output.push_str(&pairs.join(&seperator));
+            output.push('\n');
+            output
+        } else {
+            pairs.join(", ")
+        }
+
+    }
+
+    fn visit_value(&mut self, node: &latex::SyntaxNode) -> String {
+        let mut output = String::new();
+
+        for child in node.children() {
+            if child.kind() == SyntaxKind::TEXT {
+                output.push_str(child.to_string().trim());
+            }
+        }
+        output
+    }
+
+    fn visit_new_command(&mut self, node: &latex::SyntaxNode) -> String {
+        let mut output = String::new();
+        let mut command = String::new();
+        let mut args = String::new();
+        let mut content = String::new();
+
+        for child in node.children_with_tokens() {
+            match child.kind() {
+                SyntaxKind::CURLY_GROUP_COMMAND => {
+                    command.push_str(child.to_string().trim());
+                }
+                SyntaxKind::BRACK_GROUP_WORD => {
+                    args.push_str(&self.visit_brack_group_word(child.as_node().unwrap()));
+                }
+                SyntaxKind::CURLY_GROUP => {
+                    content.push_str(self.visit_curly_groupt(child.as_node().unwrap()).trim());
+                }
+                _ => {}
+            }
+        }
+
+        output.push_str("\\newcommand");
+        output.push_str(&command);
+        if !args.is_empty() {
+            output.push_str("[");
+            output.push_str(&args);
+            output.push_str("]");
+        }
+        if !content.is_empty() {
+            output.push_str("{");
+            output.push_str(&content);
+            output.push_str("}");
+        }
+        output.push('\n');
+        output
+    }
+
+    fn visit_curly_groupt(&mut self, unwrap: &latex::SyntaxNode) -> String {
+        let mut output = String::new();
+        for child in unwrap.children() {
+            output.push_str(&self.visit(&child.into()));
+        }
+        output
+    }
+
+    fn visit_brack_group_word(&mut self, unwrap: &latex::SyntaxNode) -> String {
+        let mut words = Vec::new();
+
+        for child in unwrap.children() {
+            if child.kind() == SyntaxKind::KEY {
+                words.push(self.visit_key(&child));
+            }
+        }
+        let content = words.join(", ");
+        content.to_string()
+    }
+
 }
 
+#[derive(Default)]
 pub struct LSTGraph {
     graph: Graph<String, String>,
 }
@@ -310,3 +346,6 @@ impl LSTGraph {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
