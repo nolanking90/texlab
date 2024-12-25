@@ -14,11 +14,75 @@ fn check(input: &str, expect: Expect) {
 #[test]
 fn test_environment() {
     check(
-        r#"
-\begin{center}some text.\end{center}
-        "#,
+        r#"\begin{center}some text.\end{center}"#,
         expect![[r#"
-            "\\begin{center}some text.\\end{center}\n"
+"\\begin{center}
+    some text.
+\\end{center}\n"
         "#]],
+    );
+}
+
+#[test]
+fn test_nested_environment() {
+    check(
+        r#"
+\begin{itemize}\begin{itemize}
+    \begin{center}Centered item\end{center}
+\end{itemize}
+        "#,
+        expect![[r#""#]],
+    );
+}
+
+#[test]
+fn test_command_with_arguments() {
+    check(
+        r#"\newcommand{\vect}[1]{\begin{pmatrix}#1\end{pmatrix}}"#,
+        expect![[r#""#]],
+    );
+}
+
+#[test]
+fn test_math_environment() {
+    check(
+        r#"\begin{equation}E=mc^2\end{equation}"#,
+        expect![[r#""#]],
+    );
+}
+
+#[test]
+fn test_display_math_environment() {
+    check(
+        r#"\[E=mc^2\]"#,
+        expect![[r#""#]],
+    );
+}
+
+#[test]
+fn test_comment_handling() {
+    check(
+        r#"
+% This is a comment
+\begin{itemize}\item Item 1 % Comment after item
+\item Item 2\end{itemize}
+        "#,
+        expect![[r#""#]],
+    );
+}
+
+#[test]
+fn test_inline_math() {
+    check(
+        r#"Here is some inline math: $E=mc^2$."#,
+        expect![[r#""#]],
+    );
+}
+
+#[test]
+fn test_section_heading() {
+    check(
+        r#"\section{Introduction}"#,
+        expect![[r#""#]],
     );
 }

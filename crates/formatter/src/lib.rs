@@ -54,6 +54,7 @@ impl Formatter {
             SyntaxKind::KEY_VALUE_BODY => self.visit_key_value_body(node),
             SyntaxKind::KEY_VALUE_PAIR => self.visit_key_value_pair(node),
             SyntaxKind::NEW_COMMAND_DEFINITION => self.visit_new_command(node),
+            SyntaxKind::EQUATION => self.visit_equation(node),
             _ => self.visit_children(node),
         }
     }
@@ -110,7 +111,7 @@ impl Formatter {
             newline.push('\n');
         }
 
-        format!("{}{}{}{{{}}}{}", indent, cmd, options, package_name, newline)
+        format!("{indent}{cmd}{options}{{{package_name}}}{newline}")
     }
 
     fn visit_key(&self, node: &latex::SyntaxNode) -> String {
@@ -200,7 +201,6 @@ impl Formatter {
         } else {
             pairs.join(", ")
         }
-
     }
 
     fn visit_value(&mut self, node: &latex::SyntaxNode) -> String {
@@ -229,7 +229,7 @@ impl Formatter {
                     args.push_str(&self.visit_brack_group_word(child.as_node().unwrap()));
                 }
                 SyntaxKind::CURLY_GROUP => {
-                    content.push_str(self.visit_curly_groupt(child.as_node().unwrap()).trim());
+                    content.push_str(self.visit_curly_group(child.as_node().unwrap()).trim());
                 }
                 _ => {}
             }
@@ -251,7 +251,7 @@ impl Formatter {
         output
     }
 
-    fn visit_curly_groupt(&mut self, unwrap: &latex::SyntaxNode) -> String {
+    fn visit_curly_group(&mut self, unwrap: &latex::SyntaxNode) -> String {
         let mut output = String::new();
         for child in unwrap.children() {
             output.push_str(&self.visit(&child.into()));
@@ -271,6 +271,19 @@ impl Formatter {
         content.to_string()
     }
 
+    fn visit_equation(&self, node: &latex::SyntaxNode) -> String {
+        let binding = node.text().to_string();
+        let text = binding.trim();
+        if text.starts_with("$$") && text.ends_with("$$") {
+            let equation = &text[2..text.len() - 2].trim();
+            format!("$$\n{}\n$$", equation)
+        } else if text.starts_with("\\[") && text.ends_with("\\]") {
+            let equation = &text[2..text.len() - 2].trim();
+            format!("\\[\n{}\n\\]", equation)
+        } else {
+            format!("$$\n{}\n$$", text)
+        }
+    }
 }
 
 #[derive(Default)]
