@@ -1,0 +1,60 @@
+\documentclass[10pt, draft]{article}
+
+\usepackage{graphicx}
+
+\title{My First LaTeX Document}
+\author{John Doe}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section{Introduction}
+This is the first paragraph.~\emph{This text is emphasized.}
+
+This is the second paragraph.
+
+\subsection{Background}
+\begin{enumerate}
+    \item First item
+    \item Second item
+    \item Third item
+\end{enumerate}
+
+\subsubsection{Details}
+\begin{description}
+    \item[LaTeX] A typesetting system
+    \item[HTML] HyperText Markup Language
+\end{description}
+\begin{itemize}
+    \item Apple
+    \item Banana
+    \item Cherry
+\end{itemize}
+
+This is a sentence with a footnote.\footnote{This is the footnote text.}
+\begin{center}
+    \begin{tabular}{|c|c|c|}
+        \hline
+        A & B & C \\
+        \hline
+        1 & 2 & 3 \\
+        \hline
+        4 & 5 & 6 \\
+        \hline
+    \end{tabular}
+\end{center}
+\section{Another Section}
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\textwidth]{image.png}
+    \caption{Sample Image}\label{fig:sample}
+\end{figure}
+\begin{equation}
+    E = mc^2
+\end{equation}
+
+Einstein's equation $E = mc^2$ is famous. See Figure~\ref{fig:sample}.
+
+\end{document}

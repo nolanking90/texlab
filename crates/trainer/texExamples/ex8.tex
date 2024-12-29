@@ -1,0 +1,9 @@
+\usepackage{tikz}
+\usetikzlibrary{circuits.ee.IEC}
+
+\begin{tikzpicture}
+    \draw
+        (0,0) to [battery, l=$V$] (0,2)
+        to [resistor, l=$R$] (2,2)
+        -- (2,0) -- cycle;
+\end{tikzpicture}
