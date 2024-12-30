@@ -15,6 +15,10 @@ syntax = { path = "../syntax" }
 parser = { path = "../parser" }
 smartcore = "0.4.0"
 
+[dependencies.xxhash-rust]
+version = "0.8.14"
+features = ["xxh3", "const_xxh3"]
+
 [dev-dependencies]
 expect-test.workspace = true
 test-utils = { path = "../test-utils" }
