@@ -529,6 +529,11 @@ impl<'a> Parser<'a> {
         if self.peek() == Some(Token::LBrack) {
             self.brack_group();
         }
+
+        if self.peek() == Some(Token::LCurly) {
+            self.curly_group();
+        }
+
         self.builder.finish_node();
     }
 

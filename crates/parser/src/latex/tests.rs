@@ -2481,7 +2481,7 @@ fn test_issue_745() {
                           COMMAND_NAME@130..140 "\\exp_not:N"
                           WHITESPACE@140..141 " "
                         ENVIRONMENT@141..188
-                          BEGIN@141..179
+                          BEGIN@141..188
                             COMMAND_NAME@141..147 "\\begin"
                             CURLY_GROUP_WORD@147..158
                               L_CURLY@147..148 "{"
@@ -2502,13 +2502,13 @@ fn test_issue_745() {
                               R_BRACK@173..174 "]"
                               WHITESPACE@174..175 "\n"
                               WHITESPACE@175..179 "    "
-                          CURLY_GROUP@179..188
-                            L_CURLY@179..180 "{"
-                            TEXT@180..182
-                              WORD@180..182 "#2"
-                            R_CURLY@182..183 "}"
-                            WHITESPACE@183..184 "\n"
-                            WHITESPACE@184..188 "    "
+                            CURLY_GROUP@179..188
+                              L_CURLY@179..180 "{"
+                              TEXT@180..182
+                                WORD@180..182 "#2"
+                              R_CURLY@182..183 "}"
+                              WHITESPACE@183..184 "\n"
+                              WHITESPACE@184..188 "    "
                         R_CURLY@188..189 "}"
                         WHITESPACE@189..190 "\n"
                         WHITESPACE@190..194 "    "

@@ -46,7 +46,7 @@ pub enum Token {
     #[regex(r"[a-zA-Z]+:\/\/[^{}]+")]
     Href,
 
-    #[regex(r"\$\$?")]
+    #[regex(r"\$\$?|\\\)|\\\(")]
     Dollar,
 
     #[regex(r"\\", |lexer| { lex_command_name(lexer); CommandName::Generic } )]

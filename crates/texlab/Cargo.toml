@@ -36,6 +36,7 @@ diagnostics = { path = "../diagnostics" }
 distro = { path = "../distro" }
 fern = "0.7.0"
 folding = { path = "../folding" }
+formatter = { path = "../formatter" }
 highlights = { path = "../highlights" }
 hover = { path = "../hover" }
 inlay-hints = { path = "../inlay-hints" }
