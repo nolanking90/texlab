@@ -1,3 +1,4 @@
+#![allow(unused_variables, dead_code)]
 use syntax::latex::{SyntaxElement, SyntaxKind, SyntaxNode};
 
 use crate::math::{MathEnvironment, MathParent};
@@ -14,11 +15,16 @@ fn blanklines_and_comments(node: &SyntaxNode) -> Vec<TexElement> {
                 output.push(TexElement::BlankLine);
             }
             if token.kind() == SyntaxKind::COMMENT {
-                output.push(TexElement::Comment(token.to_string()));
+                output.push(TexElement::Comment(TexComment::from(node)));
             }
         }
     }
     output
+}
+
+pub struct LineBreak {
+    line: usize,
+    character: usize,
 }
 
 pub enum TexElement {
@@ -37,7 +43,7 @@ pub enum TexElement {
     Formula(TexFormula),
     Section(TexSection),
     BlankLine,
-    Comment(String),
+    Comment(TexComment),
     BeginEnvironment(TexBeginEnvironment),
     EndEnvironment(TexEndEnvironment),
 }
@@ -112,28 +118,58 @@ impl TexElement {
         }
     }
 
-    pub fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    pub fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         match self {
-            TexElement::Command(cmd) => cmd.format(indent_level, tabstop, line_length),
-            TexElement::Environment(env) => env.format(indent_level, tabstop, line_length),
-            TexElement::Text(text) => vec![text.to_string().trim().to_string()],
-            TexElement::Parent(p) => p.format(indent_level, tabstop, line_length),
-            TexElement::KeyValPair(kvp) => kvp.format(indent_level, tabstop, line_length),
-            TexElement::CurlyGroup(group) => group.format(indent_level, tabstop, line_length),
-            TexElement::BrackGroup(group) => group.format(indent_level, tabstop, line_length),
-            TexElement::BrackGroupWord(group) => group.format(indent_level, tabstop, line_length),
-            TexElement::BrackGroupKeyVal(group) => group.format(indent_level, tabstop, line_length),
-            TexElement::CurlyGroupWordList(group) => {
-                group.format(indent_level, tabstop, line_length)
+            TexElement::Command(cmd) => cmd.format(indent_level, tabstop, line_length, max_length),
+            TexElement::Environment(env) => {
+                env.format(indent_level, tabstop, line_length, max_length)
             }
-            TexElement::MixedGroup(group) => group.format(indent_level, tabstop, line_length),
-            TexElement::EnumItem(item) => item.format(indent_level, tabstop, line_length),
-            TexElement::Formula(formula) => formula.format(indent_level, tabstop, line_length),
-            TexElement::Section(section) => section.format(indent_level, tabstop, line_length),
+            TexElement::Text(text) => vec![text.to_string().trim().to_string()],
+            TexElement::Parent(p) => p.format(indent_level, tabstop, line_length, max_length),
+            TexElement::KeyValPair(kvp) => {
+                kvp.format(indent_level, tabstop, line_length, max_length)
+            }
+            TexElement::CurlyGroup(group) => {
+                group.format(indent_level, tabstop, line_length, max_length)
+            }
+            TexElement::BrackGroup(group) => {
+                group.format(indent_level, tabstop, line_length, max_length)
+            }
+            TexElement::BrackGroupWord(group) => {
+                group.format(indent_level, tabstop, line_length, max_length)
+            }
+            TexElement::BrackGroupKeyVal(group) => {
+                group.format(indent_level, tabstop, line_length, max_length)
+            }
+            TexElement::CurlyGroupWordList(group) => {
+                group.format(indent_level, tabstop, line_length, max_length)
+            }
+            TexElement::MixedGroup(group) => {
+                group.format(indent_level, tabstop, line_length, max_length)
+            }
+            TexElement::EnumItem(item) => {
+                item.format(indent_level, tabstop, line_length, max_length)
+            }
+            TexElement::Formula(formula) => {
+                formula.format(indent_level, tabstop, line_length, max_length)
+            }
+            TexElement::Section(section) => {
+                section.format(indent_level, tabstop, line_length, max_length)
+            }
             TexElement::BlankLine => vec![String::new()],
-            TexElement::Comment(text) => vec![text.to_string().trim().to_string()],
-            TexElement::BeginEnvironment(begin) => begin.format(indent_level, tabstop, line_length),
-            TexElement::EndEnvironment(end) => end.format(indent_level, tabstop, line_length),
+            TexElement::Comment(text) => text.format(),
+            TexElement::BeginEnvironment(begin) => {
+                begin.format(indent_level, tabstop, line_length, max_length)
+            }
+            TexElement::EndEnvironment(end) => {
+                end.format(indent_level, tabstop, line_length, max_length)
+            }
         }
     }
 
@@ -159,6 +195,10 @@ impl TexElement {
             TexElement::EndEnvironment(end) => end.len(),
         }
     }
+
+    pub fn line_breaks(&self) -> Vec<LineBreak> {
+        todo!()
+    }
 }
 
 pub struct TexParent {
@@ -180,25 +220,38 @@ impl TexParent {
             })
             .map(|child| match child {
                 SyntaxElement::Node(n) => TexElement::from(&n),
-                SyntaxElement::Token(t) => TexElement::Text(t.to_string()),
+                SyntaxElement::Token(t) => match t.kind() {
+                        SyntaxKind::COMMENT => TexElement::Comment(TexComment::from(&node)),
+                        _ => TexElement::Text(t.to_string()),
+                    },
             })
             .collect();
         Self { children }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut output: Vec<String> = Vec::new();
         let indent = indent_str(indent_level, tabstop);
         let mut line = indent.clone();
         for (i, child) in self.children.iter().enumerate() {
-            if line.len() > line_length {
+            if line.len() >= line_length {
                 output.push(line);
                 line = String::new();
             }
             match child {
                 TexElement::Command(cmd) => {
-                    let cmdln = cmd.format(0, 0, 0).join("").len();
-                    if line.len() + cmdln > line_length && !line.trim().is_empty() {
+                    let cmdln = cmd.len();
+                    println!("{}", line);
+                    println!("{}", line.len());
+                    println!("cmdln: {}", cmdln);
+                    println!("line length: {}", line_length);
+                    if line.len() + cmdln >= line_length - 1 && !line.trim().is_empty() {
                         line = line.trim_end().to_string();
                         if !line.trim().ends_with('%') {
                             line.push('%');
@@ -229,7 +282,7 @@ impl TexParent {
                             line = String::new();
                         }
                         output.extend(
-                            cmd.format(indent_level, tabstop, line_length)
+                            cmd.format(indent_level, tabstop, line_length, max_length)
                                 .iter()
                                 .map(|string| string.trim_end().to_string()),
                         );
@@ -238,7 +291,8 @@ impl TexParent {
                         output.push(line.trim().to_string());
                         line = String::new();
                     } else {
-                        let fmt = cmd.format(indent_level, tabstop, line_length - line.len());
+                        let fmt =
+                            cmd.format(indent_level, tabstop, line_length - line.len(), max_length);
                         if fmt.len() == 1 && line.len() + fmt[0].len() < line_length {
                             line.push_str(fmt[0].clone().trim());
                             if let Some(TexElement::Text(txt)) = self.children.get(i + 1) {
@@ -265,7 +319,12 @@ impl TexParent {
                                 line.push(' ');
                             }
                         } else {
-                            let fmt = cmd.format(indent_level, tabstop, line_length - line.len());
+                            let fmt = cmd.format(
+                                indent_level,
+                                tabstop,
+                                line_length - line.len(),
+                                max_length,
+                            );
                             if fmt.len() == 1 {
                                 line.push_str(fmt[0].clone().trim());
                             } else {
@@ -321,14 +380,14 @@ impl TexParent {
                     }
                     output.extend(
                         child
-                            .format(indent_level, tabstop, line_length)
+                            .format(indent_level, tabstop, line_length, max_length)
                             .iter()
                             .map(|line| line.trim_end().to_string()),
                     );
                 }
 
                 TexElement::Parent(p) => {
-                    let fmt = p.format(indent_level, tabstop, line_length);
+                    let fmt = p.format(indent_level, tabstop, line_length, max_length);
                     line.push_str(&format!("{}{}", indent, fmt[0]));
                     output.push(line.clone());
                     if fmt.len() > 1 {
@@ -350,7 +409,8 @@ impl TexParent {
                 | TexElement::BrackGroupWord(_)
                 | TexElement::CurlyGroupWordList(_)
                 | TexElement::MixedGroup(_) => {
-                    let fmt = child.format(indent_level, tabstop, line_length);
+                    let fmt =
+                        child.format(indent_level, tabstop, line_length - line.len(), max_length);
                     line.push_str(fmt[0].trim_end());
                     if fmt.len() > 1 {
                         output.push(line);
@@ -374,7 +434,7 @@ impl TexParent {
 
                 TexElement::Formula(formula) => {
                     if formula.inline {
-                        let fmt = formula.format(indent_level, tabstop, line_length);
+                        let fmt = formula.format(indent_level, tabstop, line_length, max_length);
                         if fmt.join("").len() + line.len() > line_length {
                             output.push(line);
                             line = String::new();
@@ -422,8 +482,22 @@ impl TexParent {
                             output.push(line.trim_end().to_string());
                             line = indent.clone();
                         }
-                        output.extend(formula.format(indent_level, tabstop, line_length));
+                        output.extend(formula.format(
+                            indent_level,
+                            tabstop,
+                            line_length,
+                            max_length,
+                        ));
                     }
+                }
+
+                TexElement::Comment(comment) => {
+                    let _ = comment
+                        .body
+                        .iter()
+                        .map(|cmt| line.push_str(&cmt));
+                    output.push(line);
+                    line = indent.clone();
                 }
 
                 TexElement::KeyValPair(_) => {} // KeyValPair should only be children of delimeter groups
@@ -487,25 +561,30 @@ impl TexCommand {
                 _ => {}
             }
         }
-        args.extend(blanklines_and_comments(node));
 
         Self { name, args }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut output = Vec::new();
         let mut fmt = String::new();
         fmt.push_str(&self.name);
         for arg in self.args.iter() {
             if line_length == 0 {
                 fmt.push_str(
-                    arg.format(indent_level, tabstop, line_length)
+                    arg.format(indent_level, tabstop, line_length, max_length)
                         .join("")
                         .trim_end(),
                 );
                 return vec![fmt];
             }
-            let ln = arg.format(indent_level, tabstop, line_length - self.name.len());
+            let ln = arg.format(indent_level, tabstop, line_length - fmt.len(), max_length);
             if ln.first().unwrap().len() + fmt.len() > line_length {
                 output.push(fmt.trim_end().to_string());
                 fmt = String::new();
@@ -534,8 +613,11 @@ impl TexCommand {
         output
     }
 
-    fn len(&self) -> usize {
-        self.name.len() + self.args.iter().map(|arg| arg.len()).sum::<usize>()
+    pub fn len(&self) -> usize {
+        let name_len = self.name.len();
+        let arg_len = self.args.iter().map(|arg| arg.len()).sum::<usize>();
+        let total = name_len + arg_len;
+        total
     }
 }
 
@@ -552,61 +634,49 @@ impl TexCurlyGroup {
         }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut output = Vec::new();
         if line_length == 0 {
-            let bodytext = self.body.format(indent_level, tabstop, line_length);
+            let bodytext = self
+                .body
+                .format(indent_level, tabstop, line_length, max_length);
             output.push(format!("{{{}}}", bodytext.join("").trim()));
             return output;
         }
 
-        let bodytext = self.body.format(indent_level, tabstop, line_length);
         let mut line = "{".to_string();
-        for l in bodytext {
-            if line.len() + l.len() <= line_length && !l.contains('%') {
-                line.push_str(l.trim());
-            } else {
-                output.push(line.clone());
-                line = indent_str(indent_level + 1, tabstop);
-                if line.ends_with('%') {
-                    output.push(l);
-                } else {
-                    line.push_str(l.as_str());
-                }
-            }
-        }
-        if output.len() <= 1 {
-            line.push('}');
+        if line.len() + self.body.len() > line_length {
             output.push(line);
         } else {
+            let bodytext = self
+                .body
+                .format(indent_level, tabstop, line_length, max_length);
+            line.push_str(&bodytext.join(""));
+            line.push('}');
             output.push(line);
-            output.push("}".to_string());
+            return output;
         }
-
-        //if bodytext.iter().map(|line| line.len()).sum::<usize>() <= line_length {
-        //output.push(format!("{{{}}}", bodytext.join("").trim()));
-        //for out in self
-        //.tail
-        //.iter()
-        //.map(|line| line.format(indent_level, tabstop, line_length))
-        //{
-        //output.extend(out);
-        //}
-        //return output;
-        //}
-
-        //let bodytext = self.body.format(indent_level, tabstop, line_length);
-        //let indent = indent_str(indent_level + 1, tabstop);
-        //output.push("{".to_string());
-        //output.extend(bodytext.iter().map(|line| format!("{indent}{line}")));
-        //output.push("}".to_string());
-        for out in self
-            .tail
-            .iter()
-            .map(|line| line.format(indent_level, tabstop, line_length))
-        {
-            output.extend(out);
+        let bodytext = self
+            .body
+            .format(0, tabstop, max_length - 1 - (indent_level + 1) * tabstop, max_length);
+        for l in bodytext {
+            let mut line = indent_str(indent_level +1, tabstop);
+            line.push_str(l.trim_end());
+            if l.ends_with('%') {
+                output.push(line.to_string());
+            } else {
+                line.push('%');
+                output.push(line);
+            }
         }
+        output.push("}".to_string());
+
         output
     }
 
@@ -647,11 +717,17 @@ impl TexBrackGroup {
         Self { children, tail }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut output: Vec<String> = Vec::new();
 
         for child in self.children.iter() {
-            let fmt = child.format(indent_level, tabstop, line_length);
+            let fmt = child.format(indent_level, tabstop, line_length, max_length);
             if !matches!(fmt.join("").as_str(), "=") {
                 if let Some(last) = output.last() {
                     if last.ends_with("=") {
@@ -674,7 +750,7 @@ impl TexBrackGroup {
         for out in self
             .tail
             .iter()
-            .map(|line| line.format(indent_level, tabstop, line_length))
+            .map(|line| line.format(indent_level, tabstop, line_length, max_length))
         {
             output.extend(out);
         }
@@ -682,7 +758,7 @@ impl TexBrackGroup {
     }
 
     fn len(&self) -> usize {
-        2 + self.children.iter().map(|child| child.len()).sum::<usize>()
+        self.children.iter().map(|child| child.len() + 2).sum::<usize>()
     }
 }
 
@@ -703,16 +779,22 @@ impl TexBrackGroupKeyVal {
         Self { children, tail }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut output = Vec::new();
         for child in self.children.iter() {
-            output.extend(child.format(indent_level, tabstop, line_length));
+            output.extend(child.format(indent_level, tabstop, line_length, max_length));
         }
         output = vec![format!("[{}]", output.join(", "))];
         for out in self
             .tail
             .iter()
-            .map(|line| line.format(indent_level, tabstop, line_length))
+            .map(|line| line.format(indent_level, tabstop, line_length, max_length))
         {
             output.extend(out);
         }
@@ -746,16 +828,22 @@ impl TexBrackGroupWord {
         Self { children, tail }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut output = Vec::new();
         for child in self.children.iter() {
-            output.extend(child.format(indent_level, tabstop, line_length));
+            output.extend(child.format(indent_level, tabstop, line_length, max_length));
         }
         output = vec![format!("[{}]", output.join(", "))];
         for out in self
             .tail
             .iter()
-            .map(|line| line.format(indent_level, tabstop, line_length))
+            .map(|line| line.format(indent_level, tabstop, line_length, max_length))
         {
             output.extend(out);
         }
@@ -763,7 +851,7 @@ impl TexBrackGroupWord {
     }
 
     fn len(&self) -> usize {
-        2 + self.children.iter().map(|child| child.len()).sum::<usize>()
+        self.children.iter().map(|child| child.len() + 2 ).sum::<usize>()
     }
 }
 
@@ -797,13 +885,19 @@ impl TexMixedGroup {
         }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut line = String::new();
         line.push_str(&self.open_delim);
         for child in self.children.iter() {
             line.push_str(
                 child
-                    .format(indent_level, tabstop, line_length)
+                    .format(indent_level, tabstop, line_length, max_length)
                     .join("")
                     .split(",")
                     .collect::<Vec<&str>>()
@@ -817,7 +911,7 @@ impl TexMixedGroup {
         for out in self
             .tail
             .iter()
-            .map(|line| line.format(indent_level, tabstop, line_length))
+            .map(|line| line.format(indent_level, tabstop, line_length, max_length))
         {
             output.extend(out);
         }
@@ -845,16 +939,22 @@ impl TexCurlyGroupWordList {
         }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut output = Vec::new();
         for child in self.children.iter() {
-            output.extend(child.format(indent_level, tabstop, line_length));
+            output.extend(child.format(indent_level, tabstop, line_length, max_length));
         }
         output = vec![format!("{{{}}}", output.join(", ").trim().to_string())];
         for out in self
             .tail
             .iter()
-            .map(|line| line.format(indent_level, tabstop, line_length))
+            .map(|line| line.format(indent_level, tabstop, line_length, max_length))
         {
             output.extend(out);
         }
@@ -893,18 +993,26 @@ impl TexEnvironmentParent {
         }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         match self {
             TexEnvironmentParent::Tex(tex) => {
-                let mut output = tex.format(indent_level, tabstop, line_length);
+                let mut output = tex.format(indent_level, tabstop, line_length, max_length);
                 for child in &tex.body.children {
                     if matches!(child, TexElement::BlankLine | TexElement::Comment(_)) {
-                        output.extend(child.format(indent_level, tabstop, line_length));
+                        output.extend(child.format(indent_level, tabstop, line_length, max_length));
                     }
                 }
                 output
             }
-            TexEnvironmentParent::Math(math) => math.format(indent_level, tabstop, line_length),
+            TexEnvironmentParent::Math(math) => {
+                math.format(indent_level, tabstop, line_length, max_length)
+            }
         }
     }
 
@@ -914,7 +1022,6 @@ impl TexEnvironmentParent {
             TexEnvironmentParent::Math(math) => math.len(),
         }
     }
-
 }
 
 pub struct TexBeginEnvironment {
@@ -954,7 +1061,13 @@ impl TexBeginEnvironment {
         Self { name, args, tail }
     }
 
-    pub fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    pub fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut line = String::new();
         let mut output = Vec::new();
         let mut indent = 0;
@@ -963,14 +1076,14 @@ impl TexBeginEnvironment {
         }
         line.push_str(&format!("{}\\begin", indent_str(indent, tabstop)));
         for arg in &self.args {
-            let fmt = arg.format(indent_level, tabstop, line_length);
+            let fmt = arg.format(indent_level, tabstop, line_length, max_length);
             line.push_str(&fmt[0]);
         }
         if !line.trim().is_empty() {
             output.push(line);
         }
         for line in &self.tail {
-            output.extend(line.format(indent_level, tabstop, line_length));
+            output.extend(line.format(indent_level, tabstop, line_length, max_length));
         }
         output
     }
@@ -998,7 +1111,13 @@ impl TexEndEnvironment {
         Self { name, tail }
     }
 
-    pub fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    pub fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut line = String::new();
         let mut output = Vec::new();
         let mut indent = 0;
@@ -1014,7 +1133,7 @@ impl TexEndEnvironment {
             output.push(line);
         }
         for line in &self.tail {
-            output.extend(line.format(indent, tabstop, line_length));
+            output.extend(line.format(indent, tabstop, line_length, max_length));
         }
         output
     }
@@ -1040,7 +1159,13 @@ impl TexEnvironment {
         Self { body }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut subindent = 1;
         if let Some(TexElement::BeginEnvironment(child)) = self.body.children.first() {
             if matches!(child.name.as_str(), "document" | "verbatim") {
@@ -1049,7 +1174,7 @@ impl TexEnvironment {
         }
 
         self.body
-            .format(indent_level + subindent, tabstop, line_length)
+            .format(indent_level + subindent, tabstop, line_length, max_length)
     }
 
     fn len(&self) -> usize {
@@ -1082,7 +1207,13 @@ impl TexKeyVal {
         Self { key, value }
     }
 
-    fn format(&self, _indent_level: usize, _tabstop: usize, _line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        _indent_level: usize,
+        _tabstop: usize,
+        _line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         match &self.value {
             Some(val) => vec![format!("{}={val}", self.key)],
             None => vec![format!("{}", self.key)],
@@ -1109,8 +1240,16 @@ impl TexEnumItem {
         }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
-        let output = self.body.format(indent_level, tabstop, line_length - 6);
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
+        let output = self
+            .body
+            .format(indent_level, tabstop, line_length - 6, max_length);
         let mut space = String::new();
         let indent = indent_str(indent_level, tabstop);
         if output.first().unwrap().chars().nth(0) != Some('[') {
@@ -1151,7 +1290,13 @@ impl TexFormula {
         Self { inline, body, tail }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut output = Vec::new();
         let indent = indent_str(indent_level, tabstop);
         if self.inline {
@@ -1161,7 +1306,9 @@ impl TexFormula {
         }
 
         if self.inline {
-            let fmt = self.body.format(indent_level, tabstop, line_length);
+            let fmt = self
+                .body
+                .format(indent_level, tabstop, line_length, max_length);
             if fmt.join("").trim().len() + 6 <= line_length {
                 output.push(fmt.join("").trim().to_string());
                 output.push(" \\)".to_string());
@@ -1169,32 +1316,36 @@ impl TexFormula {
                 for out in self
                     .tail
                     .iter()
-                    .map(|line| line.format(indent_level, tabstop, line_length))
+                    .map(|line| line.format(indent_level, tabstop, line_length, max_length))
                 {
                     output.extend(out);
                 }
                 output
             } else {
-                let fmt = self.body.format(indent_level, tabstop, line_length);
+                let fmt = self
+                    .body
+                    .format(indent_level, tabstop, line_length, max_length);
                 output.extend(fmt);
                 output.push("\\)".to_string());
                 for out in self
                     .tail
                     .iter()
-                    .map(|line| line.format(indent_level, tabstop, line_length))
+                    .map(|line| line.format(indent_level, tabstop, line_length, max_length))
                 {
                     output.extend(out);
                 }
                 output
             }
         } else {
-            let fmt = self.body.format(indent_level + 1, tabstop, line_length);
+            let fmt = self
+                .body
+                .format(indent_level + 1, tabstop, line_length, max_length);
             output.extend(fmt);
             output.push(format!("{indent}\\]"));
             for out in self
                 .tail
                 .iter()
-                .map(|line| line.format(indent_level, tabstop, line_length))
+                .map(|line| line.format(indent_level, tabstop, line_length, max_length))
             {
                 output.extend(out);
             }
@@ -1234,16 +1385,49 @@ impl TexSection {
         Self { kind, name, body }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(
+        &self,
+        indent_level: usize,
+        tabstop: usize,
+        line_length: usize,
+        max_length: usize,
+    ) -> Vec<String> {
         let mut output = Vec::new();
         output.push(String::new());
         output.push(format!("{}{{{}}}", self.kind, self.name));
         output.push(String::new());
-        output.extend(self.body.format(indent_level, tabstop, line_length));
+        output.extend(
+            self.body
+                .format(indent_level, tabstop, line_length, max_length),
+        );
         output
     }
 
     fn len(&self) -> usize {
         self.name.len() + self.body.len()
+    }
+}
+
+pub struct TexComment {
+    body: Vec<String>,
+}
+
+impl TexComment {
+    pub fn from(node: &SyntaxNode) -> Self {
+        Self {
+            body: node
+                .children_with_tokens()
+                .filter(|child| child.kind() == SyntaxKind::COMMENT)
+                .map(|token| token.to_string())
+                .collect::<Vec<String>>(),
+        }
+    }
+
+    fn format(&self) -> Vec<String> {
+        self.body.clone()
+    }
+
+    fn len(&self) -> usize {
+        self.body.iter().map(|child| child.len()).sum()
     }
 }

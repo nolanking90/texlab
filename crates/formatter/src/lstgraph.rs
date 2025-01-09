@@ -32,7 +32,7 @@ impl LSTGraph {
                 graph_node
             }
             SyntaxElement::Token(token) => {
-                output.push_str(token.text());
+                output.push_str(format!("Kind: {:?} -- {}", token.kind(), token.to_string()).as_str());
                 self.graph.add_node(output)
             }
         }

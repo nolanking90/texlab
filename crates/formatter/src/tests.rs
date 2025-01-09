@@ -1,6 +1,13 @@
 use crate::Formatter;
+use crate::tex::TexCommand;
 use expect_test::{expect, Expect};
 use parser::{parse_latex, SyntaxConfig};
+
+fn check_len(input: &str, expect: Expect) {
+    let root = syntax::latex::SyntaxNode::new_root(parse_latex(input, &SyntaxConfig::default()));
+    let len = TexCommand::from(&root.first_child().unwrap().first_child().unwrap()).len();
+    expect.assert_eq(&len.to_string());
+}
 
 fn check(input: &str, expect: Expect) {
     let root = syntax::latex::SyntaxNode::new_root(parse_latex(input, &SyntaxConfig::default()));
@@ -582,8 +589,7 @@ fn test_new_command_long() {
             [
                 "\\newcommand{\\headandfoot}[3]{",
                 "  \\lhead{#1}\\chead{#2}\\rhead{Section 16 {\\hspace{.25in}}}%",
-                "  \\lfoot{\\copyright~Pennsylvania State University}\\cfoot{\\thepage}%",
-                "  \\rfoot{#3}",
+                "  \\lfoot{\\copyright~Pennsylvania State University}\\cfoot{\\thepage}\\rfoot{#3}%",
                 "}",
             ]
         "#]],
@@ -593,10 +599,10 @@ fn test_new_command_long() {
 #[test]
 fn test_new_command_respect_line_breaks() {
     check(
-        r#"\newcommand{\headandfoot}[3]{
-    \lhead{#1}\chead{#2}\rhead{Section 16 {\hspace{.25in}}}%
-    \lfoot{\copyright~Pennsylvania State University}\cfoot{\thepage}%
-    \rfoot{#3}
+r#"\newcommand{\headandfoot}[3]{
+  \lhead{#1}\chead{#2}\rhead{Section 16 {\hspace{.25in}}}%
+  \lfoot{\copyright~Pennsylvania State University}\cfoot{\thepage}%
+  \rfoot{#3}
 }"#,
         expect![[r#"
             [
@@ -607,5 +613,13 @@ fn test_new_command_respect_line_breaks() {
                 "}",
             ]
         "#]],
+    )
+}
+
+#[test]
+fn test_command_len() {
+    check_len(
+        r#"\rfoot{#3}"#,
+        expect![[r#"10"#]],
     )
 }
