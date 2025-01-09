@@ -8,7 +8,7 @@ pub fn indent_str(indent_level: usize, tabstop: usize) -> String {
 
 fn blanklines_and_comments(node: &SyntaxNode) -> Vec<TexElement> {
     let mut output = Vec::new();
-    for desc in node.descendants_with_tokens() {
+    for desc in node.children_with_tokens() {
         if let Some(token) = desc.as_token() {
             if token.to_string() == "\n\n" {
                 output.push(TexElement::BlankLine);
@@ -31,6 +31,8 @@ pub enum TexElement {
     MixedGroup(TexMixedGroup),
     CurlyGroupWordList(TexCurlyGroupWordList),
     BrackGroup(TexBrackGroup),
+    BrackGroupWord(TexBrackGroupWord),
+    BrackGroupKeyVal(TexBrackGroupKeyVal),
     EnumItem(TexEnumItem),
     Formula(TexFormula),
     Section(TexSection),
@@ -88,9 +90,13 @@ impl TexElement {
                 }
             }
             SyntaxKind::CURLY_GROUP => TexElement::CurlyGroup(TexCurlyGroup::from(node)),
-            SyntaxKind::BRACK_GROUP | SyntaxKind::BRACK_GROUP_KEY_VALUE => {
-                TexElement::BrackGroup(TexBrackGroup::from(node))
+            SyntaxKind::BRACK_GROUP_KEY_VALUE => {
+                TexElement::BrackGroupKeyVal(TexBrackGroupKeyVal::from(node))
             }
+            SyntaxKind::BRACK_GROUP_WORD => {
+                TexElement::BrackGroupWord(TexBrackGroupWord::from(node))
+            }
+            SyntaxKind::BRACK_GROUP => TexElement::BrackGroup(TexBrackGroup::from(node)),
             SyntaxKind::CURLY_GROUP_WORD | SyntaxKind::CURLY_GROUP_WORD_LIST => {
                 TexElement::CurlyGroupWordList(TexCurlyGroupWordList::from(node))
             }
@@ -115,6 +121,8 @@ impl TexElement {
             TexElement::KeyValPair(kvp) => kvp.format(indent_level, tabstop, line_length),
             TexElement::CurlyGroup(group) => group.format(indent_level, tabstop, line_length),
             TexElement::BrackGroup(group) => group.format(indent_level, tabstop, line_length),
+            TexElement::BrackGroupWord(group) => group.format(indent_level, tabstop, line_length),
+            TexElement::BrackGroupKeyVal(group) => group.format(indent_level, tabstop, line_length),
             TexElement::CurlyGroupWordList(group) => {
                 group.format(indent_level, tabstop, line_length)
             }
@@ -126,6 +134,29 @@ impl TexElement {
             TexElement::Comment(text) => vec![text.to_string().trim().to_string()],
             TexElement::BeginEnvironment(begin) => begin.format(indent_level, tabstop, line_length),
             TexElement::EndEnvironment(end) => end.format(indent_level, tabstop, line_length),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            TexElement::Command(cmd) => cmd.len(),
+            TexElement::Environment(env) => env.len(),
+            TexElement::Text(text) => text.len(),
+            TexElement::Parent(p) => p.len(),
+            TexElement::KeyValPair(kvp) => kvp.len(),
+            TexElement::CurlyGroup(group) => group.len(),
+            TexElement::BrackGroup(group) => group.len(),
+            TexElement::BrackGroupWord(group) => group.len(),
+            TexElement::BrackGroupKeyVal(group) => group.len(),
+            TexElement::CurlyGroupWordList(group) => group.len(),
+            TexElement::MixedGroup(group) => group.len(),
+            TexElement::EnumItem(item) => item.len(),
+            TexElement::Formula(formula) => formula.len(),
+            TexElement::Section(section) => section.len(),
+            TexElement::BlankLine => 0,
+            TexElement::Comment(text) => text.len(),
+            TexElement::BeginEnvironment(begin) => begin.len(),
+            TexElement::EndEnvironment(end) => end.len(),
         }
     }
 }
@@ -141,8 +172,10 @@ impl TexParent {
             .filter(|child| match child {
                 SyntaxElement::Node(_) => true,
                 SyntaxElement::Token(t) => {
-                    matches!(t.kind(), SyntaxKind::HREF | SyntaxKind::COMMENT)
-                        || t.to_string() == "\n\n"
+                    matches!(
+                        t.kind(),
+                        SyntaxKind::HREF | SyntaxKind::COMMENT | SyntaxKind::EQUALITY_SIGN
+                    ) || t.to_string() == "\n\n"
                 }
             })
             .map(|child| match child {
@@ -157,19 +190,17 @@ impl TexParent {
         let mut output: Vec<String> = Vec::new();
         let indent = indent_str(indent_level, tabstop);
         let mut line = indent.clone();
-        let mut l = line.len();
         for (i, child) in self.children.iter().enumerate() {
             if line.len() > line_length {
                 output.push(line);
                 line = String::new();
             }
-            l = line.len();
             match child {
                 TexElement::Command(cmd) => {
                     let cmdln = cmd.format(0, 0, 0).join("").len();
-                    if line.len() + cmdln >= line_length && !line.trim().is_empty() {
+                    if line.len() + cmdln > line_length && !line.trim().is_empty() {
                         line = line.trim_end().to_string();
-                        if !line.ends_with('%') {
+                        if !line.trim().ends_with('%') {
                             line.push('%');
                         }
                         output.push(line.trim_end().to_string());
@@ -206,10 +237,9 @@ impl TexParent {
                         line.push_str("\\\\");
                         output.push(line.trim().to_string());
                         line = String::new();
-                        l = line.len();
                     } else {
                         let fmt = cmd.format(indent_level, tabstop, line_length - line.len());
-                        if fmt.len() == 1 && line.len() + fmt[0].len() <= line_length {
+                        if fmt.len() == 1 && line.len() + fmt[0].len() < line_length {
                             line.push_str(fmt[0].clone().trim());
                             if let Some(TexElement::Text(txt)) = self.children.get(i + 1) {
                                 if !txt.trim().is_empty()
@@ -252,12 +282,13 @@ impl TexParent {
                         }
                     }
                 }
+
                 TexElement::Text(text) if !text.trim().is_empty() => {
                     if line_length == 0 {
                         line.push_str(text);
                         continue;
                     }
-                    if text.trim().len() + line.len() < line_length {
+                    if text.trim().len() + line.len() <= line_length {
                         line.push_str(&format!("{} ", text.trim()));
                         if let Some(TexElement::Command(cmd)) = self.children.get(i + 1) {
                             if line.ends_with("~ ") {
@@ -266,46 +297,36 @@ impl TexParent {
                                 line.pop();
                             }
                         }
-                    } else {
-                        let words = text.trim().split(" ");
-                        for word in words {
-                            if line.len() + word.trim_end().len() > line_length {
-                                output.push(line.trim_end().to_string());
-                                line = indent.clone();
-                                l = line.len();
-                            }
-                            line.push_str(&format!("{word} "));
+                        continue;
+                    }
+                    let words = text.trim().split(" ");
+                    for word in words {
+                        if line.len() + word.trim_end().len() > line_length {
+                            output.push(line.trim_end().to_string());
+                            line = indent.clone();
                         }
+                        line.push_str(&format!("{word} "));
                     }
                 }
-                TexElement::Environment(env) => {
+
+                TexElement::Environment(_)
+                | TexElement::BeginEnvironment(_)
+                | TexElement::EndEnvironment(_)
+                | TexElement::BlankLine
+                | TexElement::Section(_)
+                | TexElement::EnumItem(_) => {
                     if !line.trim().is_empty() {
                         output.push(line);
                         line = indent.clone();
-                        l = line.len();
                     }
                     output.extend(
-                        env.format(indent_level, tabstop, line_length)
+                        child
+                            .format(indent_level, tabstop, line_length)
                             .iter()
                             .map(|line| line.trim_end().to_string()),
                     );
                 }
-                TexElement::BeginEnvironment(env) => {
-                    if !line.trim().is_empty() {
-                        output.push(line);
-                        line = String::new();
-                        l = line.len();
-                    }
-                    output.extend(env.format(indent_level, tabstop, line_length));
-                }
-                TexElement::EndEnvironment(env) => {
-                    if !line.trim().is_empty() {
-                        output.push(line);
-                        line = indent.clone();
-                        l = line.len();
-                    }
-                    output.extend(env.format(indent_level, tabstop, line_length));
-                }
+
                 TexElement::Parent(p) => {
                     let fmt = p.format(indent_level, tabstop, line_length);
                     line.push_str(&format!("{}{}", indent, fmt[0]));
@@ -322,29 +343,25 @@ impl TexParent {
                         line = indent.clone();
                     }
                 }
-                TexElement::KeyValPair(_) => {
-                    // KeyValPair should only be children of delimeter groups
-                }
-                TexElement::CurlyGroup(group) => {
-                    let fmt = group.format(indent_level, tabstop, line_length - line.len());
-                    line.push_str(&fmt[0]);
-                    output.push(line);
-                    line = String::new();
-                    output.extend(fmt[1..].iter().cloned());
-                }
-                TexElement::BrackGroup(group) => {
-                    line.push_str(&group.format(indent_level, tabstop, line_length).join(""));
-                }
-                TexElement::CurlyGroupWordList(group) => {
-                    line.push_str(&group.format(indent_level, tabstop, line_length).join(""));
-                }
-                TexElement::MixedGroup(group) => {
-                    line.push_str(
-                        group
-                            .format(indent_level, tabstop, line_length)
-                            .join("")
-                            .trim_end(),
-                    );
+
+                TexElement::CurlyGroup(_)
+                | TexElement::BrackGroup(_)
+                | TexElement::BrackGroupKeyVal(_)
+                | TexElement::BrackGroupWord(_)
+                | TexElement::CurlyGroupWordList(_)
+                | TexElement::MixedGroup(_) => {
+                    let fmt = child.format(indent_level, tabstop, line_length);
+                    line.push_str(fmt[0].trim_end());
+                    if fmt.len() > 1 {
+                        output.push(line);
+                        output.extend(fmt[1..fmt.len() - 1].iter().cloned());
+                        line = fmt[fmt.len() - 1].clone();
+                        if line.is_empty() {
+                            output.push(line);
+                            line = indent.clone();
+                        }
+                        continue;
+                    }
                     if let Some(TexElement::Text(txt)) = self.children.get(i + 1) {
                         if !matches!(
                             txt.chars().nth(0),
@@ -354,14 +371,7 @@ impl TexParent {
                         }
                     }
                 }
-                TexElement::EnumItem(item) => {
-                    if !line.trim().is_empty() {
-                        output.push(line.trim().to_string());
-                    }
-                    line = String::new();
-                    l = line.len();
-                    output.extend(item.format(indent_level, tabstop, line_length - line.len()));
-                }
+
                 TexElement::Formula(formula) => {
                     if formula.inline {
                         let fmt = formula.format(indent_level, tabstop, line_length);
@@ -378,15 +388,23 @@ impl TexParent {
                                         line.push(' ');
                                     }
                                 }
-                                if let Some(TexElement::Formula(formula)) = self.children.get(i + 1)
-                                {
+                                if let Some(TexElement::Formula(_)) = self.children.get(i + 1) {
                                     line.push(' ');
                                 }
                             } else {
                                 output.extend(fmt);
                             }
                         } else {
-                            line.push_str(fmt.join("").trim());
+                            line.push_str(fmt[0].trim_end());
+                            if fmt.len() > 1 {
+                                output.push(line);
+                                output.extend(fmt[1..fmt.len() - 1].iter().cloned());
+                                line = fmt[fmt.len() - 1].clone();
+                                if line.is_empty() {
+                                    output.push(line);
+                                    line = indent.clone();
+                                }
+                            }
                             if let Some(TexElement::Text(txt)) = self.children.get(i + 1) {
                                 if !matches!(
                                     txt.chars().nth(0),
@@ -395,7 +413,7 @@ impl TexParent {
                                     line.push(' ');
                                 }
                             }
-                            if let Some(TexElement::Formula(formula)) = self.children.get(i + 1) {
+                            if let Some(TexElement::Formula(_)) = self.children.get(i + 1) {
                                 line.push(' ');
                             }
                         }
@@ -403,26 +421,12 @@ impl TexParent {
                         if !line.trim().is_empty() {
                             output.push(line.trim_end().to_string());
                             line = indent.clone();
-                            l = line.len();
                         }
                         output.extend(formula.format(indent_level, tabstop, line_length));
                     }
                 }
-                TexElement::Section(section) => {
-                    if !line.trim().is_empty() {
-                        output.push(line.trim_end().to_string());
-                        line = String::new();
-                    }
-                    output.extend(section.format(indent_level, tabstop, line_length));
-                }
-                TexElement::BlankLine => {
-                    if !line.trim().is_empty() {
-                        output.push(line.trim().to_string());
-                    }
-                    line = String::new();
-                    l = line.len();
-                    output.push(String::new());
-                }
+
+                TexElement::KeyValPair(_) => {} // KeyValPair should only be children of delimeter groups
                 _ => {}
             }
         }
@@ -430,18 +434,12 @@ impl TexParent {
         if line.trim().is_empty() {
             return output;
         }
-
-        if line.len() < line_length {
-            output.push(line.trim_end().to_string());
-        } else {
-            output.push(line[0..l].to_string());
-            output.push(format!(
-                "{}{}",
-                indent_str(0, tabstop),
-                &line[l..].to_string()
-            ));
-        }
+        output.push(line.trim_end().to_string());
         output
+    }
+
+    fn len(&self) -> usize {
+        self.children.iter().map(|child| child.len()).sum()
     }
 }
 
@@ -464,6 +462,7 @@ impl TexCommand {
                             .filter(|t| matches!(t.kind(), SyntaxKind::COMMAND_NAME))
                             .map(|c| TexElement::Text(c.to_string().trim().to_string()))
                             .collect(),
+                        tail: blanklines_and_comments(&child),
                     }));
                 }
                 SyntaxKind::CURLY_GROUP => {
@@ -477,8 +476,13 @@ impl TexCommand {
                         &child,
                     )));
                 }
-                SyntaxKind::BRACK_GROUP_KEY_VALUE | SyntaxKind::BRACK_GROUP_WORD => {
-                    args.push(TexElement::BrackGroup(TexBrackGroup::from(&child)));
+                SyntaxKind::BRACK_GROUP_KEY_VALUE => {
+                    args.push(TexElement::BrackGroupKeyVal(TexBrackGroupKeyVal::from(
+                        &child,
+                    )));
+                }
+                SyntaxKind::BRACK_GROUP_WORD => {
+                    args.push(TexElement::BrackGroupWord(TexBrackGroupWord::from(&child)));
                 }
                 _ => {}
             }
@@ -499,28 +503,28 @@ impl TexCommand {
                         .join("")
                         .trim_end(),
                 );
+                return vec![fmt];
+            }
+            let ln = arg.format(indent_level, tabstop, line_length - self.name.len());
+            if ln.first().unwrap().len() + fmt.len() > line_length {
+                output.push(fmt.trim_end().to_string());
+                fmt = String::new();
+            }
+            if ln.first().unwrap().trim().is_empty() {
+                output.push(fmt.clone());
+                output.push(String::new());
+                fmt = String::new();
             } else {
-                let ln = arg.format(indent_level, tabstop, line_length - self.name.len());
-                if ln.first().unwrap().len() + fmt.len() + self.name.len() > line_length {
-                    output.push(fmt.trim_end().to_string());
-                    fmt = String::new();
+                fmt.push_str(ln.first().unwrap().trim_end());
+            }
+            if ln.len() > 1 {
+                if !fmt.trim().is_empty() {
+                    output.push(fmt);
                 }
-                if ln.first().unwrap().trim().is_empty() {
-                    output.push(fmt.clone());
+                output.extend(ln[1..ln.len() - 1].iter().cloned());
+                fmt = ln[ln.len() - 1].clone().trim_end().to_string();
+                if fmt.trim().is_empty() {
                     output.push(String::new());
-                    fmt = String::new();
-                } else {
-                    fmt.push_str(ln.first().unwrap().trim_end());
-                }
-                if ln.len() > 1 {
-                    if !fmt.trim().is_empty() {
-                        output.push(fmt);
-                    }
-                    output.extend(ln[1..ln.len() - 1].iter().cloned());
-                    fmt = ln[ln.len() - 1].clone().trim_end().to_string();
-                    if fmt.trim().is_empty() {
-                        output.push(String::new());
-                    }
                 }
             }
         }
@@ -529,16 +533,22 @@ impl TexCommand {
         }
         output
     }
+
+    fn len(&self) -> usize {
+        self.name.len() + self.args.iter().map(|arg| arg.len()).sum::<usize>()
+    }
 }
 
 pub struct TexCurlyGroup {
     body: TexParent,
+    tail: Vec<TexElement>,
 }
 
 impl TexCurlyGroup {
     fn from(node: &SyntaxNode) -> Self {
         Self {
             body: TexParent::from(node),
+            tail: blanklines_and_comments(node),
         }
     }
 
@@ -551,39 +561,146 @@ impl TexCurlyGroup {
         }
 
         let bodytext = self.body.format(indent_level, tabstop, line_length);
-        if bodytext.iter().map(|line| line.len()).sum::<usize>() <= line_length {
-            output.push(format!("{{{}}}", bodytext.join("").trim()));
-            return output;
+        let mut line = "{".to_string();
+        for l in bodytext {
+            if line.len() + l.len() <= line_length && !l.contains('%') {
+                line.push_str(l.trim());
+            } else {
+                output.push(line.clone());
+                line = indent_str(indent_level + 1, tabstop);
+                if line.ends_with('%') {
+                    output.push(l);
+                } else {
+                    line.push_str(l.as_str());
+                }
+            }
+        }
+        if output.len() <= 1 {
+            line.push('}');
+            output.push(line);
+        } else {
+            output.push(line);
+            output.push("}".to_string());
         }
 
-        let bodytext = self.body.format(indent_level + 1, tabstop, line_length);
-        let l = bodytext.len();
-        let indent = indent_str(indent_level + 1, tabstop);
-        output.push("{".to_string());
-        output.extend(bodytext.iter().map(|line| format!("{indent}{line}")));
-        output.push("}".to_string());
+        //if bodytext.iter().map(|line| line.len()).sum::<usize>() <= line_length {
+        //output.push(format!("{{{}}}", bodytext.join("").trim()));
+        //for out in self
+        //.tail
+        //.iter()
+        //.map(|line| line.format(indent_level, tabstop, line_length))
+        //{
+        //output.extend(out);
+        //}
+        //return output;
+        //}
+
+        //let bodytext = self.body.format(indent_level, tabstop, line_length);
+        //let indent = indent_str(indent_level + 1, tabstop);
+        //output.push("{".to_string());
+        //output.extend(bodytext.iter().map(|line| format!("{indent}{line}")));
+        //output.push("}".to_string());
+        for out in self
+            .tail
+            .iter()
+            .map(|line| line.format(indent_level, tabstop, line_length))
+        {
+            output.extend(out);
+        }
         output
+    }
+
+    fn len(&self) -> usize {
+        2 + self.body.len()
     }
 }
 
 pub struct TexBrackGroup {
     children: Vec<TexElement>,
+    tail: Vec<TexElement>,
 }
 
 impl TexBrackGroup {
     fn from(node: &SyntaxNode) -> Self {
         let mut children = Vec::new();
-        for child in node.children() {
-            match child.kind() {
-                SyntaxKind::KEY_VALUE_BODY => {
-                    children.extend(child.children().map(|c| TexElement::from(&c)));
+        for child in node.children_with_tokens() {
+            match child {
+                SyntaxElement::Node(node) => {
+                    if matches!(node.kind(), SyntaxKind::TEXT) {
+                        let words = node.to_string();
+                        let words = words.split(',').map(|word| word.trim());
+                        for word in words {
+                            children.push(TexElement::Text(word.to_string()))
+                        }
+                    } else {
+                        children.push(TexElement::from(&node));
+                    }
                 }
-                _ => {
-                    children.push(TexElement::from(&child));
+                SyntaxElement::Token(token) => {
+                    if token.kind() == SyntaxKind::EQUALITY_SIGN {
+                        children.push(TexElement::Text(token.to_string()));
+                    }
                 }
             }
         }
-        Self { children }
+        let tail = blanklines_and_comments(node);
+        Self { children, tail }
+    }
+
+    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+        let mut output: Vec<String> = Vec::new();
+
+        for child in self.children.iter() {
+            let fmt = child.format(indent_level, tabstop, line_length);
+            if !matches!(fmt.join("").as_str(), "=") {
+                if let Some(last) = output.last() {
+                    if last.ends_with("=") {
+                        let mut last = output.pop().unwrap();
+                        last.push_str(fmt.join("").as_str());
+                        output.push(last.to_string());
+                    } else {
+                        output.extend(fmt);
+                    }
+                } else {
+                    output.extend(fmt);
+                }
+            } else if !output.is_empty() {
+                let mut last = output.pop().unwrap();
+                last.push('=');
+                output.push(last.to_string());
+            }
+        }
+        output = vec![format!("[{}]", output.join(", "))];
+        for out in self
+            .tail
+            .iter()
+            .map(|line| line.format(indent_level, tabstop, line_length))
+        {
+            output.extend(out);
+        }
+        output
+    }
+
+    fn len(&self) -> usize {
+        2 + self.children.iter().map(|child| child.len()).sum::<usize>()
+    }
+}
+
+pub struct TexBrackGroupKeyVal {
+    children: Vec<TexElement>,
+    tail: Vec<TexElement>,
+}
+
+impl TexBrackGroupKeyVal {
+    fn from(node: &SyntaxNode) -> Self {
+        let mut children = Vec::new();
+        for child in node.children() {
+            if child.kind() == SyntaxKind::KEY_VALUE_BODY {
+                children.extend(child.children().map(|c| TexElement::from(&c)));
+            }
+        }
+        let tail = blanklines_and_comments(node);
+        Self { children, tail }
     }
 
     fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
@@ -591,7 +708,62 @@ impl TexBrackGroup {
         for child in self.children.iter() {
             output.extend(child.format(indent_level, tabstop, line_length));
         }
-        vec![format!("[{}]", output.join(", "))]
+        output = vec![format!("[{}]", output.join(", "))];
+        for out in self
+            .tail
+            .iter()
+            .map(|line| line.format(indent_level, tabstop, line_length))
+        {
+            output.extend(out);
+        }
+        output
+    }
+
+    fn len(&self) -> usize {
+        2 + self.children.iter().map(|child| child.len()).sum::<usize>()
+    }
+}
+
+pub struct TexBrackGroupWord {
+    children: Vec<TexElement>,
+    tail: Vec<TexElement>,
+}
+
+impl TexBrackGroupWord {
+    fn from(node: &SyntaxNode) -> Self {
+        let mut children = Vec::new();
+        for child in node.children() {
+            match node.kind() {
+                SyntaxKind::KEY => {
+                    children.push(TexElement::Text(child.to_string()));
+                }
+                _ => {
+                    children.push(TexElement::from(&child));
+                }
+            }
+        }
+        let tail = blanklines_and_comments(node);
+        Self { children, tail }
+    }
+
+    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+        let mut output = Vec::new();
+        for child in self.children.iter() {
+            output.extend(child.format(indent_level, tabstop, line_length));
+        }
+        output = vec![format!("[{}]", output.join(", "))];
+        for out in self
+            .tail
+            .iter()
+            .map(|line| line.format(indent_level, tabstop, line_length))
+        {
+            output.extend(out);
+        }
+        output
+    }
+
+    fn len(&self) -> usize {
+        2 + self.children.iter().map(|child| child.len()).sum::<usize>()
     }
 }
 
@@ -599,6 +771,7 @@ pub struct TexMixedGroup {
     children: Vec<TexElement>,
     open_delim: String,
     close_delim: String,
+    tail: Vec<TexElement>,
 }
 
 impl TexMixedGroup {
@@ -611,6 +784,7 @@ impl TexMixedGroup {
             _ => "",
         }
         .to_string();
+        let tail = blanklines_and_comments(node);
 
         Self {
             children: node
@@ -619,14 +793,15 @@ impl TexMixedGroup {
                 .collect(),
             open_delim,
             close_delim,
+            tail,
         }
     }
 
     fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
-        let mut output = String::new();
-        output.push_str(&self.open_delim);
+        let mut line = String::new();
+        line.push_str(&self.open_delim);
         for child in self.children.iter() {
-            output.push_str(
+            line.push_str(
                 child
                     .format(indent_level, tabstop, line_length)
                     .join("")
@@ -637,13 +812,26 @@ impl TexMixedGroup {
                     .trim(),
             );
         }
-        output.push_str(&self.close_delim);
-        vec![output]
+        line.push_str(&self.close_delim);
+        let mut output = vec![line];
+        for out in self
+            .tail
+            .iter()
+            .map(|line| line.format(indent_level, tabstop, line_length))
+        {
+            output.extend(out);
+        }
+        output
+    }
+
+    fn len(&self) -> usize {
+        2 + self.children.iter().map(|child| child.len()).sum::<usize>()
     }
 }
 
 pub struct TexCurlyGroupWordList {
     children: Vec<TexElement>,
+    tail: Vec<TexElement>,
 }
 
 impl TexCurlyGroupWordList {
@@ -653,6 +841,7 @@ impl TexCurlyGroupWordList {
                 .children()
                 .map(|child| TexElement::from(&child))
                 .collect(),
+            tail: blanklines_and_comments(node),
         }
     }
 
@@ -661,7 +850,19 @@ impl TexCurlyGroupWordList {
         for child in self.children.iter() {
             output.extend(child.format(indent_level, tabstop, line_length));
         }
-        vec![format!("{{{}}}", output.join(", ").trim().to_string())]
+        output = vec![format!("{{{}}}", output.join(", ").trim().to_string())];
+        for out in self
+            .tail
+            .iter()
+            .map(|line| line.format(indent_level, tabstop, line_length))
+        {
+            output.extend(out);
+        }
+        output
+    }
+
+    fn len(&self) -> usize {
+        2 + self.children.iter().map(|child| child.len()).sum::<usize>()
     }
 }
 
@@ -706,6 +907,14 @@ impl TexEnvironmentParent {
             TexEnvironmentParent::Math(math) => math.format(indent_level, tabstop, line_length),
         }
     }
+
+    fn len(&self) -> usize {
+        match self {
+            TexEnvironmentParent::Tex(tex) => tex.len(),
+            TexEnvironmentParent::Math(math) => math.len(),
+        }
+    }
+
 }
 
 pub struct TexBeginEnvironment {
@@ -765,6 +974,10 @@ impl TexBeginEnvironment {
         }
         output
     }
+
+    fn len(&self) -> usize {
+        2 + self.name.len() + self.args.iter().map(|arg| arg.len()).sum::<usize>()
+    }
 }
 
 pub struct TexEndEnvironment {
@@ -805,6 +1018,10 @@ impl TexEndEnvironment {
         }
         output
     }
+
+    fn len(&self) -> usize {
+        2 + self.name.len()
+    }
 }
 
 pub struct TexEnvironment {
@@ -820,10 +1037,6 @@ impl TexEnvironment {
                 .collect(),
         };
 
-        //if let Some(last_child) = node.last_child() {
-        //body.children.extend(blanklines_and_comments(&last_child));
-        //}
-
         Self { body }
     }
 
@@ -837,6 +1050,10 @@ impl TexEnvironment {
 
         self.body
             .format(indent_level + subindent, tabstop, line_length)
+    }
+
+    fn len(&self) -> usize {
+        self.body.len()
     }
 }
 
@@ -865,10 +1082,18 @@ impl TexKeyVal {
         Self { key, value }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+    fn format(&self, _indent_level: usize, _tabstop: usize, _line_length: usize) -> Vec<String> {
         match &self.value {
             Some(val) => vec![format!("{}={val}", self.key)],
             None => vec![format!("{}", self.key)],
+        }
+    }
+
+    fn len(&self) -> usize {
+        if let Some(val) = &self.value {
+            self.key.len() + 1 + val.len()
+        } else {
+            self.key.len()
         }
     }
 }
@@ -906,18 +1131,24 @@ impl TexEnumItem {
         );
         fmt
     }
+
+    fn len(&self) -> usize {
+        5 + self.body.len()
+    }
 }
 
 pub struct TexFormula {
     inline: bool,
     body: MathParent,
+    tail: Vec<TexElement>,
 }
 
 impl TexFormula {
     fn from(node: &SyntaxNode) -> Self {
         let inline = matches!(node.first_token().unwrap().text(), "$" | "\\(");
         let body = MathParent::from(node);
-        Self { inline, body }
+        let tail = blanklines_and_comments(node);
+        Self { inline, body, tail }
     }
 
     fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
@@ -934,19 +1165,45 @@ impl TexFormula {
             if fmt.join("").trim().len() + 6 <= line_length {
                 output.push(fmt.join("").trim().to_string());
                 output.push(" \\)".to_string());
-                vec![output.join("").trim().to_string()]
+                output = vec![output.join("").trim_end().to_string()];
+                for out in self
+                    .tail
+                    .iter()
+                    .map(|line| line.format(indent_level, tabstop, line_length))
+                {
+                    output.extend(out);
+                }
+                output
             } else {
                 let fmt = self.body.format(indent_level, tabstop, line_length);
                 output.extend(fmt);
                 output.push("\\)".to_string());
+                for out in self
+                    .tail
+                    .iter()
+                    .map(|line| line.format(indent_level, tabstop, line_length))
+                {
+                    output.extend(out);
+                }
                 output
             }
         } else {
             let fmt = self.body.format(indent_level + 1, tabstop, line_length);
             output.extend(fmt);
             output.push(format!("{indent}\\]"));
+            for out in self
+                .tail
+                .iter()
+                .map(|line| line.format(indent_level, tabstop, line_length))
+            {
+                output.extend(out);
+            }
             output
         }
+    }
+
+    fn len(&self) -> usize {
+        6 + self.body.len()
     }
 }
 
@@ -985,486 +1242,8 @@ impl TexSection {
         output.extend(self.body.format(indent_level, tabstop, line_length));
         output
     }
-}
 
-#[cfg(test)]
-mod test {
-
-    use crate::Formatter;
-    use expect_test::{expect, Expect};
-    use parser::{parse_latex, SyntaxConfig};
-
-    fn check(input: &str, expect: Expect) {
-        let root =
-            syntax::latex::SyntaxNode::new_root(parse_latex(input, &SyntaxConfig::default()));
-        let mut formatter = Formatter::new();
-        let output = formatter.format(&root);
-        let output: Vec<String> = output.split('\n').map(|s| s.to_string()).collect();
-
-        expect.assert_debug_eq(&output);
-    }
-
-    #[test]
-    fn test_simple_command() {
-        check(
-            r"\textbf{Hello, world!}",
-            expect![[r#"
-                [
-                    "\\textbf{Hello, world!}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_environment() {
-        check(
-            r"\begin{itemize}\item First item\item Second item\end{itemize}",
-            expect![[r#"
-                [
-                    "\\begin{itemize}",
-                    "  \\item First item",
-                    "  \\item Second item",
-                    "\\end{itemize}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_section() {
-        check(
-            r"\section{Introduction}This is the introduction.",
-            expect![[r#"
-                [
-                    "",
-                    "\\section{Introduction}",
-                    "",
-                    "This is the introduction.",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_formula() {
-        check(
-            r"$E = mc^2$",
-            expect![[r#"
-                [
-                    "\\( E = mc^2 \\)",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_nested_environment() {
-        check(
-            r"\begin{figure}\begin{center}\includegraphics{image.png}\end{center}\end{figure}",
-            expect![[r#"
-                [
-                    "\\begin{figure}",
-                    "  \\begin{center}",
-                    "    \\includegraphics{image.png}",
-                    "  \\end{center}",
-                    "\\end{figure}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_key_val_pair() {
-        check(
-            r"\usepackage[utf8]{inputenc}",
-            expect![[r#"
-                [
-                    "\\usepackage[utf8]{inputenc}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_curly_group() {
-        check(
-            r"\textit{This is italic text.}",
-            expect![[r#"
-                [
-                    "\\textit{This is italic text.}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_brack_group() {
-        check(
-            r"\documentclass[a4paper,12pt]{article}",
-            expect![[r#"
-                [
-                    "\\documentclass[a4paper, 12pt]{article}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_url() {
-        check(
-            r"\href{https://www.example.com}{Example}",
-            expect![[r#"
-                [
-                    "\\href{https://www.example.com}{Example}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_enum_item() {
-        check(
-            r"\begin{enumerate}\item First item\item Second item\end{enumerate}",
-            expect![[r#"
-                [
-                    "\\begin{enumerate}",
-                    "  \\item First item",
-                    "  \\item Second item",
-                    "\\end{enumerate}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_nested_curly_group() {
-        check(
-            r"\textbf{Bold \textit{and italic} text}",
-            expect![[r#"
-                [
-                    "\\textbf{Bold \\textit{and italic} text}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_complex_command() {
-        check(
-            r"\newcommand{\mycommand}[1]{This is #1}",
-            expect![[r#"
-                [
-                    "\\newcommand{\\mycommand}[1]{This is #1}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_multiline_formula() {
-        check(
-            r"\[
-                E = mc^2
-                \]",
-            expect![[r#"
-                [
-                    "\\[",
-                    "  E = mc^2",
-                    "\\]",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_with_comment() {
-        check(
-            r"This is some text % with a comment on the same line",
-            expect![[r#"
-                    [
-                        "This is some text % with a comment on the same line",
-                    ]
-                "#]],
-        );
-    }
-
-    #[test]
-    fn test_label_and_ref() {
-        check(
-            r"\label{sec:intro}\ref{sec:intro}",
-            expect![[r#"
-                [
-                    "\\label{sec:intro}\\ref{sec:intro}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_text_inside_formula() {
-        check(
-            r"$E = mc^2 \text{(Energy Equation)}$",
-            expect![[r#"
-                [
-                    "\\( E = mc^2 \\text{(Energy Equation)} \\)",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_command_sequence() {
-        check(
-            r"\textbf{Bold} \textit{Italic} \underline{Underlined}",
-            expect![[r#"
-                [
-                    "\\textbf{Bold}\\textit{Italic}\\underline{Underlined}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_complex_nested_environment() {
-        check(
-            r"\begin{center}\begin{minipage}{0.5\textwidth}\textbf{Nested content}\end{minipage}\end{center}",
-            expect![[r#"
-                [
-                    "\\begin{center}",
-                    "  \\begin{minipage}{0.5\\textwidth}",
-                    "    \\textbf{Nested content}",
-                    "  \\end{minipage}",
-                    "\\end{center}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_command_with_multiple_brack_args() {
-        check(
-            r"\command[arg1,arg2,arg3]{Some text}",
-            expect![[r#"
-                [
-                    "\\command[arg1, arg2, arg3]{Some text}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_section_with_subsection() {
-        check(
-            r"\section{Main Section}\subsection{Sub Section}Content here",
-            expect![[r#"
-                [
-                    "",
-                    "\\section{Main Section}",
-                    "",
-                    "",
-                    "\\subsection{Sub Section}",
-                    "",
-                    "Content here",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_nested_brack_and_curly_args() {
-        check(
-            r"\command[option1,option2]{\textbf{Bold text} and \textit{Italic text}}",
-            expect![[r#"
-                [
-                    "\\command[option1, option2]{\\textbf{Bold text} and \\textit{Italic text}}",
-                ]
-            "#]],
-        );
-    }
-
-    //#[test]
-    //fn test_environment_with_arguments() {
-    //check(
-    //r"\begin{theorem}[label=thm:example,another=option]\textbf{A bold statement}\end{theorem}",
-    //expect![[r#"
-    //[
-    //"\\begin{theorem}[label=thm:example, another=option]",
-    //"  \\textbf{A bold statement}",
-    //"\\end{theorem}",
-    //]
-    //"#]],
-    //);
-    //}
-
-    #[test]
-    fn test_command_with_multiple_required_args() {
-        check(
-            r"\newcommand{\cmd}[1]{Arg one is #1}",
-            expect![[r#"
-                    [
-                        "\\newcommand{\\cmd}[1]{Arg one is #1}",
-                    ]
-                "#]],
-        );
-    }
-
-    #[test]
-    fn test_multiple_environments_in_sequence() {
-        check(
-            r"\begin{center}Centered text\end{center}\begin{flushright}Right text\end{flushright}",
-            expect![[r#"
-                    [
-                        "\\begin{center}",
-                        "  Centered text",
-                        "\\end{center}",
-                        "\\begin{flushright}",
-                        "  Right text",
-                        "\\end{flushright}",
-                    ]
-                "#]],
-        );
-    }
-
-    #[test]
-    fn test_verbatim_environment() {
-        check(
-            r"\begin{verbatim}Some verbatim text\end{verbatim}",
-            expect![[r#"
-                [
-                    "\\begin{verbatim}",
-                    "Some verbatim text",
-                    "\\end{verbatim}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_command_with_semicolon_args() {
-        check(
-            r"\command[option1;option2]{\textbf{Hello}}",
-            expect![[r#"
-                [
-                    "\\command[option1;option2]{\\textbf{Hello}}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_multiple_inline_formulas() {
-        check(
-            r"$E=mc^2$ and $a^2 + b^2 = c^2$",
-            expect![[r#"
-                [
-                    "\\( E = mc^2 \\) and \\( a^2 + b^2 = c^2 \\)",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_word_wrap() {
-        check(
-            ["\\documentclass{article}\\begin{document}\\begin{center} This is a long line. This is",
-                "a long line. This is a long line. This is a long line. This is a long line. This is",
-                "a long line. This is a long line. This is a long line. This is a long line. This is",
-                "a long line. This is a long line.\\end{center}\\end{document}"].join(" ").as_str(),
-            expect![[r#"
-                [
-                    "\\documentclass{article}",
-                    "\\begin{document}",
-                    "\\begin{center}",
-                    "  This is a long line. This is a long line. This is a long line. This is a long",
-                    "  line. This is a long line. This is a long line. This is a long line. This is a",
-                    "  long line. This is a long line. This is a long line. This is a long line.",
-                    "\\end{center}",
-                    "\\end{document}",
-                ]
-            "#]],
-        );
-    }
-
-    #[test]
-    fn test_enum_with_formulas() {
-        check(
-            [
-                "\\documentclass{article}\\begin{document}\\begin{enumerate}",
-                "\\item $\\overrightarrow{a}(t)=\\langle t,t^2,t^3\\rangle$ with $\\overrightarrow{v}(2)=\\langle 2,3,-4\\rangle$ and $\\overrightarrow{r}(1)=\\langle 1,1,1\\rangle$",
-                "\\item $\\overrightarrow{a}(t)=\\langle \\cos(t),\\frac{-2t}{(1+t^2)^2},\\frac{t}{(1-t^2)^{3/2}}\\rangle$ with $\\overrightarrow{v}(0)=\\langle 0,1,1\\rangle$", 
-                "and $\\overrightarrow{r}(0)=\\langle -1,0,0\\rangle$",
-                "\\end{enumerate}\\end{document}"
-            ].join("").as_str(),
-            expect![[r#"
-                [
-                    "\\documentclass{article}",
-                    "\\begin{document}",
-                    "\\begin{enumerate}",
-                    "  \\item \\( \\overrightarrow{a}(t) = \\langle t, t^2, t^3 \\rangle \\) with",
-                    "    \\( \\overrightarrow{v}(2) = \\langle 2, 3, - 4 \\rangle \\) and",
-                    "    \\( \\overrightarrow{r}(1) = \\langle 1, 1, 1 \\rangle \\)",
-                    "  \\item",
-                    "    \\(",
-                    "      \\overrightarrow{a}(t) = \\langle \\cos(t), \\frac{- 2t}{(1 + t^2)^2},",
-                    "      \\frac{t}{(1 - t^2)^{3 / 2}} \\rangle",
-                    "    \\)",
-                    "    with \\( \\overrightarrow{v}(0) = \\langle 0, 1, 1 \\rangle \\) and",
-                    "    \\( \\overrightarrow{r}(0) = \\langle - 1, 0, 0 \\rangle \\)",
-                    "\\end{enumerate}",
-                    "\\end{document}",
-                ]
-            "#]]
-
-        );
-    }
-
-    #[test]
-    fn test_env_end_with_command() {
-        check(
-            r#"\begin{frame}\titlepage\end{frame}"#,
-            expect![[r#"
-            [
-                "\\begin{frame}",
-                "  \\titlepage",
-                "\\end{frame}",
-            ]
-        "#]],
-        )
-    }
-
-    #[test]
-    fn test_respect_blanklines_after_commands() {
-        check(
-            r#"\documentclass[aspectratio=169]{beamer}
-\usetheme{Madrid}
-\usecolortheme{dove}
-
-\usepackage{graphicx,amsmath,amssymb,amsfonts}
-\usepackage{physics}
-\usepackage{hyperref}
-
-\title[2D Vectors]{2D Vectors: Definitions, Equations, and Problems}
-\author{Your Name}
-\institute{Your Institution}
-\date{\today}
-"#,
-            expect![[r#"
-                [
-                    "\\documentclass[aspectratio=169]{beamer}",
-                    "\\usetheme{Madrid}",
-                    "\\usecolortheme{dove}",
-                    "",
-                    "\\usepackage{graphicx, amsmath, amssymb, amsfonts}",
-                    "\\usepackage{physics}",
-                    "\\usepackage{hyperref}",
-                    "",
-                    "\\title[2D Vectors]{2D Vectors: Definitions, Equations, and Problems}",
-                    "\\author{Your Name}",
-                    "\\institute{Your Institution}",
-                    "\\date{\\today}",
-                ]
-            "#]],
-        )
+    fn len(&self) -> usize {
+        self.name.len() + self.body.len()
     }
 }

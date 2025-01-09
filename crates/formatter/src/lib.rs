@@ -1,4 +1,3 @@
-#![allow(dead_code, unused_variables)]
 use syntax::latex::SyntaxNode;
 
 pub mod lstgraph;
@@ -8,8 +7,6 @@ mod math;
 
 pub struct FormatContext {
     tabstop: usize,
-    indent_level: usize,
-    math_mode: bool,
     line_length: usize,
 }
 
@@ -19,13 +16,11 @@ pub struct Formatter {
 }
 
 impl Formatter {
-    pub fn new() -> Self {
+    pub fn new(tabstop: usize, line_length: usize) -> Self {
         Self {
             context: FormatContext {
-                tabstop: 2,
-                indent_level: 0,
-                math_mode: false,
-                line_length: 80,
+                tabstop,
+                line_length,
             },
             doc: TexElement::Text(String::new()),
         }
@@ -39,9 +34,9 @@ impl Formatter {
 
 impl Default for Formatter {
     fn default() -> Self {
-        Self::new()
+        Self::new(2, 80)
     }
 }
 
-//#[cfg(test)]
-//mod tests;
+#[cfg(test)]
+mod tests;

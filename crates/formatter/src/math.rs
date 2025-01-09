@@ -2,32 +2,6 @@ use syntax::latex::{SyntaxElement, SyntaxKind, SyntaxNode};
 
 use crate::tex;
 
-fn split_after_indices(s: String, indices: &Vec<isize>) -> Vec<String> {
-    let len = s.len() as isize;
-    let mut parts = Vec::new();
-    let mut prev_end = 0;
-
-    for i in indices {
-        let idx = if *i < 0 {
-            (len + i) as usize
-        } else {
-            *i as usize
-        };
-        let split_point = (idx + 1).min(s.len());
-
-        if split_point > prev_end {
-            parts.push(s[prev_end..split_point].to_string());
-            prev_end = split_point;
-        }
-    }
-
-    if prev_end < s.len() {
-        parts.push(s[prev_end..].to_string());
-    }
-
-    parts
-}
-
 pub enum MathElement {
     Parent(MathParent),
     Command(MathCommand),
@@ -144,7 +118,7 @@ impl MathParent {
                                 line.push(' ');
                             }
                         }
-                        if let Some(MathElement::Command(cmd)) = self.children.get(i + 1) {
+                        if let Some(MathElement::Command(_)) = self.children.get(i + 1) {
                             line.push(' ');
                         }
                     }
@@ -152,7 +126,7 @@ impl MathParent {
                 MathElement::Text(text) if !(text.trim().is_empty()) => {
                     line.push_str(text.trim());
                     if i != self.children.len() - 1 && !line.ends_with('^') {
-                        if let Some(MathElement::MixedGroup(group)) = self.children.get(i + 1) {
+                        if let Some(MathElement::MixedGroup(_)) = self.children.get(i + 1) {
                         } else if let Some(MathElement::Text(txt)) = self.children.get(i + 1) {
                             if !matches!(txt.chars().nth(0), Some('^'))
                                 && (!line.ends_with('&')
@@ -197,7 +171,7 @@ impl MathParent {
                             line.push(' ');
                         }
                     }
-                    if let Some(MathElement::Command(cmd)) = self.children.get(i + 1) {
+                    if let Some(MathElement::Command(_)) = self.children.get(i + 1) {
                         line.push(' ');
                     }
                 }
@@ -232,7 +206,7 @@ impl MathParent {
                             line.push(' ');
                         }
                     }
-                    if let Some(MathElement::Command(cmd)) = self.children.get(i + 1) {
+                    if let Some(MathElement::Command(_)) = self.children.get(i + 1) {
                         line.push(' ');
                     }
                 }
@@ -246,6 +220,10 @@ impl MathParent {
             .iter()
             .map(|line| format!("{}{}", tex::indent_str(indent_level, tabstop), line))
             .collect()
+    }
+
+    pub fn len(&self) -> usize {
+        todo!()
     }
 }
 
@@ -532,5 +510,9 @@ impl MathEnvironment {
             .collect();
 
         aligned_lines
+    }
+
+    pub fn len(&self) -> usize {
+        todo!()
     }
 }

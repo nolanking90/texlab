@@ -20,7 +20,7 @@ pub fn format_source_code(
     match document.language {
         Language::Tex => match workspace.config().formatting.tex_formatter {
             Formatter::Null => None,
-            Formatter::Server => format_with_texlab(workspace, document),
+            Formatter::Server => format_with_texlab(workspace, document, options),
             Formatter::LatexIndent => format_with_latexindent(workspace, document),
         },
         Language::Bib => match workspace.config().formatting.bib_formatter {
@@ -38,17 +38,20 @@ pub fn format_source_code(
 }
 
 pub fn format_with_texlab(
-    _workspace: &Workspace,
+    workspace: &Workspace,
     document: &Document,
+    options: &lsp_types::FormattingOptions,
 ) -> Option<Vec<lsp_types::TextEdit>> {
     let root_node = document.data.as_tex()?.root_node();
-    let path = &document.path;
-    let mut formatter = TexFormatter::new();
-    let mut output = "".to_string();
-    // output.push_str(&formatter.visit(&latex::SyntaxElement::Node(root_node.clone())));
-    output.push_str(&formatter.format(&root_node));
+    let config = workspace.config();
+    let line_length = config.formatting.line_length;
+    let mut formatter = TexFormatter::new(options.tab_size as usize, line_length);
+    let output = formatter.format(&root_node);
+
+    // For troubleshooting
     let mut lstgraph = LSTGraph::new();
     let _ = lstgraph.visit(&latex::SyntaxElement::Node(root_node));
+    let path = &document.path;
     lstgraph.print_graph(path);
 
     let target_dir = tempdir().ok()?;
