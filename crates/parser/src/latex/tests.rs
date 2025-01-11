@@ -2769,9 +2769,9 @@ fn test_issue_919() {
                       WORD@15..22 "article"
                     R_CURLY@22..23 "}"
                     WHITESPACE@23..25 "\n\n"
-                PACKAGE_INCLUDE@25..173
+                PACKAGE_INCLUDE@25..50
                   COMMAND_NAME@25..36 "\\usepackage"
-                  CURLY_GROUP_WORD_LIST@36..173
+                  CURLY_GROUP_WORD_LIST@36..50
                     L_CURLY@36..37 "{"
                     WHITESPACE@37..38 "\n"
                     WHITESPACE@38..42 "    "
@@ -2779,20 +2779,24 @@ fn test_issue_919() {
                       WORD@42..48 "lipsum"
                     COMMA@48..49 ","
                     WHITESPACE@49..50 " "
-                    COMMENT@50..70 "% provides blindtext"
-                    WHITESPACE@70..71 "\n"
-                    WHITESPACE@71..75 "    "
-                    KEY@75..83
-                      WORD@75..83 "booktabs"
-                    COMMA@83..84 ","
-                    WHITESPACE@84..85 " "
-                    COMMENT@85..110 "% better rules for ta ..."
-                    WHITESPACE@110..111 "\n"
-                    WHITESPACE@111..115 "    "
-                    COMMENT@115..169 "%xcolor % easily defi ..."
-                    WHITESPACE@169..170 "\n"
-                    R_CURLY@170..171 "}"
-                    WHITESPACE@171..173 "\n\n"
+                COMMENT@50..71
+                  COMMENT@50..70 "% provides blindtext"
+                  WHITESPACE@70..71 "\n"
+                WHITESPACE@71..75 "    "
+                TEXT@75..85
+                  WORD@75..83 "booktabs"
+                  COMMA@83..84 ","
+                  WHITESPACE@84..85 " "
+                COMMENT@85..111
+                  COMMENT@85..110 "% better rules for ta ..."
+                  WHITESPACE@110..111 "\n"
+                WHITESPACE@111..115 "    "
+                COMMENT@115..170
+                  COMMENT@115..169 "%xcolor % easily defi ..."
+                  WHITESPACE@169..170 "\n"
+                ERROR@170..171
+                  R_CURLY@170..171 "}"
+                WHITESPACE@171..173 "\n\n"
                 ENVIRONMENT@173..217
                   BEGIN@173..194
                     COMMAND_NAME@173..179 "\\begin"
@@ -3702,7 +3706,8 @@ fn test_href_with_space() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..47
                     L_CURLY@5..6 "{"
-                    HREF@6..46 "https://www.test.com/ ..."
+                    HREF@6..46
+                      HREF@6..46 "https://www.test.com/ ..."
                     R_CURLY@46..47 "}"
                   CURLY_GROUP@47..59
                     L_CURLY@47..48 "{"
@@ -3729,7 +3734,8 @@ fn test_href_lone_space() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..29
                     L_CURLY@5..6 "{"
-                    HREF@6..28 "http://example.com/%20"
+                    HREF@6..28
+                      HREF@6..28 "http://example.com/%20"
                     R_CURLY@28..29 "}"
                   CURLY_GROUP@29..41
                     L_CURLY@29..30 "{"
@@ -3756,7 +3762,8 @@ fn test_href_with_variables() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..64
                     L_CURLY@5..6 "{"
-                    HREF@6..63 "https://example.com/p ..."
+                    HREF@6..63
+                      HREF@6..63 "https://example.com/p ..."
                     R_CURLY@63..64 "}"
                   CURLY_GROUP@64..76
                     L_CURLY@64..65 "{"
@@ -3783,7 +3790,8 @@ fn test_href_ftp_filename() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..38
                     L_CURLY@5..6 "{"
-                    HREF@6..37 "ftp://ftp.example.com ..."
+                    HREF@6..37
+                      HREF@6..37 "ftp://ftp.example.com ..."
                     R_CURLY@37..38 "}"
                   CURLY_GROUP@38..50
                     L_CURLY@38..39 "{"
@@ -3810,7 +3818,8 @@ fn test_href_ampersand() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..51
                     L_CURLY@5..6 "{"
-                    HREF@6..50 "https://www.example.c ..."
+                    HREF@6..50
+                      HREF@6..50 "https://www.example.c ..."
                     R_CURLY@50..51 "}"
                   CURLY_GROUP@51..63
                     L_CURLY@51..52 "{"
@@ -3837,7 +3846,8 @@ fn test_href_top_anchor() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..38
                     L_CURLY@5..6 "{"
-                    HREF@6..37 "http://example.com/#% ..."
+                    HREF@6..37
+                      HREF@6..37 "http://example.com/#% ..."
                     R_CURLY@37..38 "}"
                   CURLY_GROUP@38..50
                     L_CURLY@38..39 "{"
@@ -3864,7 +3874,8 @@ fn test_href_numeric_percentage() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..50
                     L_CURLY@5..6 "{"
-                    HREF@6..49 "https://example.com?q ..."
+                    HREF@6..49
+                      HREF@6..49 "https://example.com?q ..."
                     R_CURLY@49..50 "}"
                   CURLY_GROUP@50..62
                     L_CURLY@50..51 "{"
@@ -3891,7 +3902,8 @@ fn test_href_nonstandard_char() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..36
                     L_CURLY@5..6 "{"
-                    HREF@6..35 "https://example.com/% ..."
+                    HREF@6..35
+                      HREF@6..35 "https://example.com/% ..."
                     R_CURLY@35..36 "}"
                   CURLY_GROUP@36..48
                     L_CURLY@36..37 "{"
@@ -3918,7 +3930,8 @@ fn test_href_nested() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..40
                     L_CURLY@5..6 "{"
-                    HREF@6..39 "http://example.com/%2 ..."
+                    HREF@6..39
+                      HREF@6..39 "http://example.com/%2 ..."
                     R_CURLY@39..40 "}"
                   CURLY_GROUP@40..52
                     L_CURLY@40..41 "{"
@@ -3945,7 +3958,8 @@ fn test_url_with_percent_in_path() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..37
                     L_CURLY@5..6 "{"
-                    HREF@6..36 "http://example.com/pa ..."
+                    HREF@6..36
+                      HREF@6..36 "http://example.com/pa ..."
                     R_CURLY@36..37 "}"
                   CURLY_GROUP@37..49
                     L_CURLY@37..38 "{"
@@ -3972,7 +3986,8 @@ fn test_url_with_multiple_percent_encoding() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..47
                     L_CURLY@5..6 "{"
-                    HREF@6..46 "https://example.com/s ..."
+                    HREF@6..46
+                      HREF@6..46 "https://example.com/s ..."
                     R_CURLY@46..47 "}"
                   CURLY_GROUP@47..59
                     L_CURLY@47..48 "{"
@@ -3999,7 +4014,8 @@ fn test_url_with_nested_percent_and_space() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..52
                     L_CURLY@5..6 "{"
-                    HREF@6..51 "https://example.com/q ..."
+                    HREF@6..51
+                      HREF@6..51 "https://example.com/q ..."
                     R_CURLY@51..52 "}"
                   CURLY_GROUP@52..64
                     L_CURLY@52..53 "{"
@@ -4026,7 +4042,8 @@ fn test_url_with_triple_percent_encoding() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..42
                     L_CURLY@5..6 "{"
-                    HREF@6..41 "https://example.com/% ..."
+                    HREF@6..41
+                      HREF@6..41 "https://example.com/% ..."
                     R_CURLY@41..42 "}"
                   CURLY_GROUP@42..54
                     L_CURLY@42..43 "{"
@@ -4053,7 +4070,8 @@ fn test_href_with_percent_character() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..27
                     L_CURLY@5..6 "{"
-                    HREF@6..26 "http://example.com/%"
+                    HREF@6..26
+                      HREF@6..26 "http://example.com/%"
                     R_CURLY@26..27 "}"
                   CURLY_GROUP@27..49
                     L_CURLY@27..28 "{"
@@ -4080,7 +4098,8 @@ fn test_href_with_percent_encoded_query() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..47
                     L_CURLY@5..6 "{"
-                    HREF@6..46 "https://example.com/s ..."
+                    HREF@6..46
+                      HREF@6..46 "https://example.com/s ..."
                     R_CURLY@46..47 "}"
                   CURLY_GROUP@47..61
                     L_CURLY@47..48 "{"
@@ -4105,7 +4124,8 @@ fn test_url_with_double_percent_signs() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..43
                     L_CURLY@5..6 "{"
-                    HREF@6..42 "https://example.com/p ..."
+                    HREF@6..42
+                      HREF@6..42 "https://example.com/p ..."
                     R_CURLY@42..43 "}"
                   CURLY_GROUP@43..55
                     L_CURLY@43..44 "{"
@@ -4132,7 +4152,8 @@ fn test_url_with_deep_nested_percent_encoding() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..34
                     L_CURLY@5..6 "{"
-                    HREF@6..33 "http://example.com/%% ..."
+                    HREF@6..33
+                      HREF@6..33 "http://example.com/%% ..."
                     R_CURLY@33..34 "}"
                   CURLY_GROUP@34..46
                     L_CURLY@34..35 "{"
@@ -4159,7 +4180,8 @@ fn test_url_with_spaces_in_percent_encoding() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..54
                     L_CURLY@5..6 "{"
-                    HREF@6..53 "https://example.com/f ..."
+                    HREF@6..53
+                      HREF@6..53 "https://example.com/f ..."
                     R_CURLY@53..54 "}"
                   CURLY_GROUP@54..66
                     L_CURLY@54..55 "{"
@@ -4186,7 +4208,8 @@ fn test_url_with_percent_and_path_structure() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..47
                     L_CURLY@5..6 "{"
-                    HREF@6..46 "http://example.com/%/ ..."
+                    HREF@6..46
+                      HREF@6..46 "http://example.com/%/ ..."
                     R_CURLY@46..47 "}"
                   CURLY_GROUP@47..59
                     L_CURLY@47..48 "{"
@@ -4213,7 +4236,8 @@ fn test_url_with_parentheses_and_percent_encoding() {
                   COMMAND_NAME@0..5 "\\href"
                   CURLY_GROUP@5..63
                     L_CURLY@5..6 "{"
-                    HREF@6..62 "https://example.com/q ..."
+                    HREF@6..62
+                      HREF@6..62 "https://example.com/q ..."
                     R_CURLY@62..63 "}"
                   CURLY_GROUP@63..75
                     L_CURLY@63..64 "{"

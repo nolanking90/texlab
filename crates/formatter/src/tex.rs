@@ -3,23 +3,20 @@ use syntax::latex::{SyntaxElement, SyntaxKind, SyntaxNode};
 
 use crate::math::{MathEnvironment, MathParent};
 
-pub fn indent_str(indent_level: usize, tabstop: usize) -> String {
-    " ".repeat(indent_level * tabstop)
+pub fn get_blankline(node: &SyntaxNode) -> Option<TexElement> {
+    if let Some(token) = node.last_token() {
+        if token.to_string().contains("\n\n") || token.to_string().contains("\r\n\r\n") {
+            Some(TexElement::BlankLine)
+        } else {
+            None
+        }
+    } else {
+        None
+    }
 }
 
-fn blanklines_and_comments(node: &SyntaxNode) -> Vec<TexElement> {
-    let mut output = Vec::new();
-    for desc in node.children_with_tokens() {
-        if let Some(token) = desc.as_token() {
-            if token.to_string() == "\n\n" {
-                output.push(TexElement::BlankLine);
-            }
-            if token.kind() == SyntaxKind::COMMENT {
-                output.push(TexElement::Comment(TexComment::from(node)));
-            }
-        }
-    }
-    output
+pub fn indent_str(indent_level: usize, tabstop: usize) -> String {
+    " ".repeat(indent_level * tabstop)
 }
 
 pub struct LineBreak {
@@ -52,6 +49,7 @@ impl TexElement {
     pub fn from(node: &SyntaxNode) -> TexElement {
         match node.kind() {
             SyntaxKind::ROOT | SyntaxKind::PREAMBLE => TexElement::Parent(TexParent::from(node)),
+            SyntaxKind::COMMENT => TexElement::Comment(TexComment::from(node)),
             SyntaxKind::SECTION
             | SyntaxKind::SUBSECTION
             | SyntaxKind::SUBSUBSECTION
@@ -61,7 +59,6 @@ impl TexElement {
             SyntaxKind::GENERIC_COMMAND
             | SyntaxKind::PACKAGE_INCLUDE
             | SyntaxKind::CLASS_INCLUDE
-            | SyntaxKind::HREF
             | SyntaxKind::IMPORT
             | SyntaxKind::CAPTION
             | SyntaxKind::LATEX_INCLUDE
@@ -81,15 +78,16 @@ impl TexElement {
             | SyntaxKind::GLOSSARY_ENTRY_REFERENCE
             | SyntaxKind::GLOSSARY_ENTRY_DEFINITION => TexElement::Command(TexCommand::from(node)),
             SyntaxKind::ENVIRONMENT => TexElement::Environment(TexEnvironmentParent::from(node)),
-            SyntaxKind::TEXT | SyntaxKind::KEY | SyntaxKind::ERROR => {
+            SyntaxKind::HREF | SyntaxKind::TEXT | SyntaxKind::KEY | SyntaxKind::ERROR => {
                 let text = node.to_string();
-                let words: Vec<&str> = text.split("\n\n").collect();
+                let words: Vec<String> = text.split("\n\n").map(|word| word.replace("\n", " ")).collect();
                 if words.len() > 1 {
                     let mut children = Vec::new();
                     for word in words {
-                        children.push(TexElement::Text(word.to_string()));
+                        children.push(TexElement::Text(format!("{} ", word)));
                         children.push(TexElement::BlankLine);
                     }
+                    children.pop();
                     TexElement::Parent(TexParent { children })
                 } else {
                     TexElement::Text(node.to_string().replace("\n", " "))
@@ -130,7 +128,7 @@ impl TexElement {
             TexElement::Environment(env) => {
                 env.format(indent_level, tabstop, line_length, max_length)
             }
-            TexElement::Text(text) => vec![text.to_string().trim().to_string()],
+            TexElement::Text(text) => vec![text.to_string()],
             TexElement::Parent(p) => p.format(indent_level, tabstop, line_length, max_length),
             TexElement::KeyValPair(kvp) => {
                 kvp.format(indent_level, tabstop, line_length, max_length)
@@ -163,7 +161,7 @@ impl TexElement {
                 section.format(indent_level, tabstop, line_length, max_length)
             }
             TexElement::BlankLine => vec![String::new()],
-            TexElement::Comment(text) => text.format(),
+            TexElement::Comment(text) => vec![text.format()],
             TexElement::BeginEnvironment(begin) => {
                 begin.format(indent_level, tabstop, line_length, max_length)
             }
@@ -207,25 +205,13 @@ pub struct TexParent {
 
 impl TexParent {
     fn from(node: &SyntaxNode) -> Self {
-        let children = node
-            .children_with_tokens()
-            .filter(|child| match child {
-                SyntaxElement::Node(_) => true,
-                SyntaxElement::Token(t) => {
-                    matches!(
-                        t.kind(),
-                        SyntaxKind::HREF | SyntaxKind::COMMENT | SyntaxKind::EQUALITY_SIGN
-                    ) || t.to_string() == "\n\n"
-                }
-            })
-            .map(|child| match child {
-                SyntaxElement::Node(n) => TexElement::from(&n),
-                SyntaxElement::Token(t) => match t.kind() {
-                        SyntaxKind::COMMENT => TexElement::Comment(TexComment::from(&node)),
-                        _ => TexElement::Text(t.to_string()),
-                    },
-            })
-            .collect();
+        let mut children = Vec::new();
+        for child in node.children() {
+            children.push(TexElement::from(&child));
+            if let Some(element) = get_blankline(&child) {
+                children.push(element);
+            }
+        }
         Self { children }
     }
 
@@ -247,10 +233,6 @@ impl TexParent {
             match child {
                 TexElement::Command(cmd) => {
                     let cmdln = cmd.len();
-                    println!("{}", line);
-                    println!("{}", line.len());
-                    println!("cmdln: {}", cmdln);
-                    println!("line length: {}", line_length);
                     if line.len() + cmdln >= line_length - 1 && !line.trim().is_empty() {
                         line = line.trim_end().to_string();
                         if !line.trim().ends_with('%') {
@@ -358,7 +340,7 @@ impl TexParent {
                         }
                         continue;
                     }
-                    let words = text.trim().split(" ");
+                    let words = text.split(" ").filter(|word| !word.is_empty() && *word != " ").collect::<Vec<&str>>();
                     for word in words {
                         if line.len() + word.trim_end().len() > line_length {
                             output.push(line.trim_end().to_string());
@@ -411,7 +393,13 @@ impl TexParent {
                 | TexElement::MixedGroup(_) => {
                     let fmt =
                         child.format(indent_level, tabstop, line_length - line.len(), max_length);
-                    line.push_str(fmt[0].trim_end());
+                    if line.trim().len() + fmt[0].len() > line_length {
+                        output.push(line.to_string());
+                        line = indent.clone();
+                        line.push_str(&fmt[0]);
+                    } else {
+                        line.push_str(&fmt[0]);
+                    }
                     if fmt.len() > 1 {
                         output.push(line);
                         output.extend(fmt[1..fmt.len() - 1].iter().cloned());
@@ -492,10 +480,7 @@ impl TexParent {
                 }
 
                 TexElement::Comment(comment) => {
-                    let _ = comment
-                        .body
-                        .iter()
-                        .map(|cmt| line.push_str(&cmt));
+                    line.push_str(&comment.format());
                     output.push(line);
                     line = indent.clone();
                 }
@@ -508,7 +493,7 @@ impl TexParent {
         if line.trim().is_empty() {
             return output;
         }
-        output.push(line.trim_end().to_string());
+        output.push(line.to_string());
         output
     }
 
@@ -536,7 +521,6 @@ impl TexCommand {
                             .filter(|t| matches!(t.kind(), SyntaxKind::COMMAND_NAME))
                             .map(|c| TexElement::Text(c.to_string().trim().to_string()))
                             .collect(),
-                        tail: blanklines_and_comments(&child),
                     }));
                 }
                 SyntaxKind::CURLY_GROUP => {
@@ -616,21 +600,18 @@ impl TexCommand {
     pub fn len(&self) -> usize {
         let name_len = self.name.len();
         let arg_len = self.args.iter().map(|arg| arg.len()).sum::<usize>();
-        let total = name_len + arg_len;
-        total
+        name_len + arg_len
     }
 }
 
 pub struct TexCurlyGroup {
     body: TexParent,
-    tail: Vec<TexElement>,
 }
 
 impl TexCurlyGroup {
     fn from(node: &SyntaxNode) -> Self {
         Self {
             body: TexParent::from(node),
-            tail: blanklines_and_comments(node),
         }
     }
 
@@ -657,16 +638,19 @@ impl TexCurlyGroup {
             let bodytext = self
                 .body
                 .format(indent_level, tabstop, line_length, max_length);
-            line.push_str(&bodytext.join(""));
+            line.push_str(bodytext.join("").trim());
             line.push('}');
             output.push(line);
             return output;
         }
-        let bodytext = self
-            .body
-            .format(0, tabstop, max_length - 1 - (indent_level + 1) * tabstop, max_length);
+        let bodytext = self.body.format(
+            0,
+            tabstop,
+            max_length - 1 - (indent_level + 1) * tabstop,
+            max_length,
+        );
         for l in bodytext {
-            let mut line = indent_str(indent_level +1, tabstop);
+            let mut line = indent_str(indent_level + 1, tabstop);
             line.push_str(l.trim_end());
             if l.ends_with('%') {
                 output.push(line.to_string());
@@ -687,7 +671,6 @@ impl TexCurlyGroup {
 
 pub struct TexBrackGroup {
     children: Vec<TexElement>,
-    tail: Vec<TexElement>,
 }
 
 impl TexBrackGroup {
@@ -713,8 +696,7 @@ impl TexBrackGroup {
                 }
             }
         }
-        let tail = blanklines_and_comments(node);
-        Self { children, tail }
+        Self { children }
     }
 
     fn format(
@@ -747,24 +729,19 @@ impl TexBrackGroup {
             }
         }
         output = vec![format!("[{}]", output.join(", "))];
-        for out in self
-            .tail
-            .iter()
-            .map(|line| line.format(indent_level, tabstop, line_length, max_length))
-        {
-            output.extend(out);
-        }
         output
     }
 
     fn len(&self) -> usize {
-        self.children.iter().map(|child| child.len() + 2).sum::<usize>()
+        self.children
+            .iter()
+            .map(|child| child.len() + 2)
+            .sum::<usize>()
     }
 }
 
 pub struct TexBrackGroupKeyVal {
     children: Vec<TexElement>,
-    tail: Vec<TexElement>,
 }
 
 impl TexBrackGroupKeyVal {
@@ -775,8 +752,7 @@ impl TexBrackGroupKeyVal {
                 children.extend(child.children().map(|c| TexElement::from(&c)));
             }
         }
-        let tail = blanklines_and_comments(node);
-        Self { children, tail }
+        Self { children }
     }
 
     fn format(
@@ -791,13 +767,6 @@ impl TexBrackGroupKeyVal {
             output.extend(child.format(indent_level, tabstop, line_length, max_length));
         }
         output = vec![format!("[{}]", output.join(", "))];
-        for out in self
-            .tail
-            .iter()
-            .map(|line| line.format(indent_level, tabstop, line_length, max_length))
-        {
-            output.extend(out);
-        }
         output
     }
 
@@ -808,7 +777,6 @@ impl TexBrackGroupKeyVal {
 
 pub struct TexBrackGroupWord {
     children: Vec<TexElement>,
-    tail: Vec<TexElement>,
 }
 
 impl TexBrackGroupWord {
@@ -824,8 +792,7 @@ impl TexBrackGroupWord {
                 }
             }
         }
-        let tail = blanklines_and_comments(node);
-        Self { children, tail }
+        Self { children }
     }
 
     fn format(
@@ -840,18 +807,14 @@ impl TexBrackGroupWord {
             output.extend(child.format(indent_level, tabstop, line_length, max_length));
         }
         output = vec![format!("[{}]", output.join(", "))];
-        for out in self
-            .tail
-            .iter()
-            .map(|line| line.format(indent_level, tabstop, line_length, max_length))
-        {
-            output.extend(out);
-        }
         output
     }
 
     fn len(&self) -> usize {
-        self.children.iter().map(|child| child.len() + 2 ).sum::<usize>()
+        self.children
+            .iter()
+            .map(|child| child.len() + 2)
+            .sum::<usize>()
     }
 }
 
@@ -859,7 +822,6 @@ pub struct TexMixedGroup {
     children: Vec<TexElement>,
     open_delim: String,
     close_delim: String,
-    tail: Vec<TexElement>,
 }
 
 impl TexMixedGroup {
@@ -872,7 +834,6 @@ impl TexMixedGroup {
             _ => "",
         }
         .to_string();
-        let tail = blanklines_and_comments(node);
 
         Self {
             children: node
@@ -881,7 +842,6 @@ impl TexMixedGroup {
                 .collect(),
             open_delim,
             close_delim,
-            tail,
         }
     }
 
@@ -907,14 +867,7 @@ impl TexMixedGroup {
             );
         }
         line.push_str(&self.close_delim);
-        let mut output = vec![line];
-        for out in self
-            .tail
-            .iter()
-            .map(|line| line.format(indent_level, tabstop, line_length, max_length))
-        {
-            output.extend(out);
-        }
+        let output = vec![line];
         output
     }
 
@@ -925,7 +878,6 @@ impl TexMixedGroup {
 
 pub struct TexCurlyGroupWordList {
     children: Vec<TexElement>,
-    tail: Vec<TexElement>,
 }
 
 impl TexCurlyGroupWordList {
@@ -935,7 +887,6 @@ impl TexCurlyGroupWordList {
                 .children()
                 .map(|child| TexElement::from(&child))
                 .collect(),
-            tail: blanklines_and_comments(node),
         }
     }
 
@@ -951,13 +902,6 @@ impl TexCurlyGroupWordList {
             output.extend(child.format(indent_level, tabstop, line_length, max_length));
         }
         output = vec![format!("{{{}}}", output.join(", ").trim().to_string())];
-        for out in self
-            .tail
-            .iter()
-            .map(|line| line.format(indent_level, tabstop, line_length, max_length))
-        {
-            output.extend(out);
-        }
         output
     }
 
@@ -1002,13 +946,7 @@ impl TexEnvironmentParent {
     ) -> Vec<String> {
         match self {
             TexEnvironmentParent::Tex(tex) => {
-                let mut output = tex.format(indent_level, tabstop, line_length, max_length);
-                for child in &tex.body.children {
-                    if matches!(child, TexElement::BlankLine | TexElement::Comment(_)) {
-                        output.extend(child.format(indent_level, tabstop, line_length, max_length));
-                    }
-                }
-                output
+                tex.format(indent_level, tabstop, line_length, max_length)
             }
             TexEnvironmentParent::Math(math) => {
                 math.format(indent_level, tabstop, line_length, max_length)
@@ -1027,7 +965,6 @@ impl TexEnvironmentParent {
 pub struct TexBeginEnvironment {
     name: String,
     args: Vec<TexElement>,
-    tail: Vec<TexElement>,
 }
 
 impl TexBeginEnvironment {
@@ -1057,8 +994,7 @@ impl TexBeginEnvironment {
             })
             .map(|node: SyntaxNode| TexElement::from(&node))
             .collect();
-        let tail = blanklines_and_comments(node);
-        Self { name, args, tail }
+        Self { name, args }
     }
 
     pub fn format(
@@ -1082,9 +1018,6 @@ impl TexBeginEnvironment {
         if !line.trim().is_empty() {
             output.push(line);
         }
-        for line in &self.tail {
-            output.extend(line.format(indent_level, tabstop, line_length, max_length));
-        }
         output
     }
 
@@ -1095,7 +1028,6 @@ impl TexBeginEnvironment {
 
 pub struct TexEndEnvironment {
     name: String,
-    tail: Vec<TexElement>,
 }
 
 impl TexEndEnvironment {
@@ -1107,8 +1039,7 @@ impl TexEndEnvironment {
             .first()
             .unwrap()
             .to_string();
-        let tail = blanklines_and_comments(node);
-        Self { name, tail }
+        Self { name }
     }
 
     pub fn format(
@@ -1132,9 +1063,6 @@ impl TexEndEnvironment {
         if !line.trim().is_empty() {
             output.push(line);
         }
-        for line in &self.tail {
-            output.extend(line.format(indent, tabstop, line_length, max_length));
-        }
         output
     }
 
@@ -1149,13 +1077,7 @@ pub struct TexEnvironment {
 
 impl TexEnvironment {
     pub fn from(node: &SyntaxNode) -> Self {
-        let body: TexParent = TexParent {
-            children: node
-                .children()
-                .map(|node: SyntaxNode| TexElement::from(&node))
-                .collect(),
-        };
-
+        let body = TexParent::from(node);
         Self { body }
     }
 
@@ -1279,15 +1201,13 @@ impl TexEnumItem {
 pub struct TexFormula {
     inline: bool,
     body: MathParent,
-    tail: Vec<TexElement>,
 }
 
 impl TexFormula {
     fn from(node: &SyntaxNode) -> Self {
         let inline = matches!(node.first_token().unwrap().text(), "$" | "\\(");
         let body = MathParent::from(node);
-        let tail = blanklines_and_comments(node);
-        Self { inline, body, tail }
+        Self { inline, body }
     }
 
     fn format(
@@ -1313,13 +1233,6 @@ impl TexFormula {
                 output.push(fmt.join("").trim().to_string());
                 output.push(" \\)".to_string());
                 output = vec![output.join("").trim_end().to_string()];
-                for out in self
-                    .tail
-                    .iter()
-                    .map(|line| line.format(indent_level, tabstop, line_length, max_length))
-                {
-                    output.extend(out);
-                }
                 output
             } else {
                 let fmt = self
@@ -1327,13 +1240,6 @@ impl TexFormula {
                     .format(indent_level, tabstop, line_length, max_length);
                 output.extend(fmt);
                 output.push("\\)".to_string());
-                for out in self
-                    .tail
-                    .iter()
-                    .map(|line| line.format(indent_level, tabstop, line_length, max_length))
-                {
-                    output.extend(out);
-                }
                 output
             }
         } else {
@@ -1342,13 +1248,6 @@ impl TexFormula {
                 .format(indent_level + 1, tabstop, line_length, max_length);
             output.extend(fmt);
             output.push(format!("{indent}\\]"));
-            for out in self
-                .tail
-                .iter()
-                .map(|line| line.format(indent_level, tabstop, line_length, max_length))
-            {
-                output.extend(out);
-            }
             output
         }
     }
@@ -1409,25 +1308,21 @@ impl TexSection {
 }
 
 pub struct TexComment {
-    body: Vec<String>,
+    body: String,
 }
 
 impl TexComment {
     pub fn from(node: &SyntaxNode) -> Self {
         Self {
-            body: node
-                .children_with_tokens()
-                .filter(|child| child.kind() == SyntaxKind::COMMENT)
-                .map(|token| token.to_string())
-                .collect::<Vec<String>>(),
+            body: node.to_string().trim().to_string(),
         }
     }
 
-    fn format(&self) -> Vec<String> {
+    fn format(&self) -> String {
         self.body.clone()
     }
 
     fn len(&self) -> usize {
-        self.body.iter().map(|child| child.len()).sum()
+        self.body.len()
     }
 }

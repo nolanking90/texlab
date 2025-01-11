@@ -49,10 +49,10 @@ pub fn format_with_texlab(
     let output = formatter.format(&root_node);
 
     // For troubleshooting
-    let mut lstgraph = LSTGraph::new();
-    let _ = lstgraph.visit(&latex::SyntaxElement::Node(root_node));
-    let path = &document.path;
-    lstgraph.print_graph(path);
+    //let mut lstgraph = LSTGraph::new();
+    //let _ = lstgraph.visit(&latex::SyntaxElement::Node(root_node));
+    //let path = &document.path;
+    //lstgraph.print_graph(path);
 
     let target_dir = tempdir().ok()?;
 

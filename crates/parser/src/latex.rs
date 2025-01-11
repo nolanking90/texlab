@@ -82,7 +82,7 @@ impl<'a> Parser<'a> {
         while self.peek().map_or(false, |kind| {
             matches!(
                 kind,
-                Token::LineBreak | Token::Whitespace | Token::LineComment
+                Token::LineBreak | Token::Whitespace
             )
         }) {
             self.eat();
@@ -101,7 +101,8 @@ impl<'a> Parser<'a> {
 
     fn content(&mut self, context: ParserContext) {
         match self.peek().unwrap() {
-            Token::LineBreak | Token::Whitespace | Token::LineComment => self.eat(),
+            Token::LineBreak | Token::Whitespace => self.eat(),
+            Token::LineComment => self.comment(),
             Token::LCurly if context.allow_environment => self.curly_group(),
             Token::LCurly => self.curly_group_without_environments(),
             Token::LBrack | Token::LParen => self.mixed_group(),
@@ -113,7 +114,7 @@ impl<'a> Parser<'a> {
             Token::Pipe | Token::Word | Token::Comma => self.text(context),
             Token::Eq => self.eat(),
             Token::Dollar => self.formula(),
-            Token::Href => self.eat(),
+            Token::Href => self.url(),
             Token::CommandName(name) => match name {
                 CommandName::Generic => self.generic_command(),
                 CommandName::BeginEnvironment if context.allow_environment => self.environment(),
@@ -176,7 +177,6 @@ impl<'a> Parser<'a> {
                     kind,
                     Token::LineBreak
                         | Token::Whitespace
-                        | Token::LineComment
                         | Token::Word
                         | Token::Pipe
                         | Token::Comma
@@ -263,7 +263,6 @@ impl<'a> Parser<'a> {
                     kind,
                     Token::LineBreak
                         | Token::Whitespace
-                        | Token::LineComment
                         | Token::Word
                         | Token::Pipe
                         | Token::Comma
@@ -368,7 +367,7 @@ impl<'a> Parser<'a> {
         self.eat();
         while let Some(kind) = self.peek() {
             match kind {
-                Token::Whitespace | Token::LineComment | Token::Word | Token::Pipe => self.eat(),
+                Token::Whitespace | Token::Word | Token::Pipe => self.eat(),
                 Token::LBrack | Token::RBrack if options.allow_bracks => self.eat(),
                 Token::LParen | Token::RParen if options.allow_parens => self.eat(),
                 Token::Eq if options.allow_eq => self.eat(),
@@ -430,7 +429,7 @@ impl<'a> Parser<'a> {
         self.builder.start_node(KEY_VALUE_BODY.into());
         while let Some(kind) = self.peek() {
             match kind {
-                Token::LineBreak | Token::Whitespace | Token::LineComment => self.eat(),
+                Token::LineBreak | Token::Whitespace => self.eat(),
                 Token::Word | Token::Pipe => {
                     self.key_value_pair();
                     if self.peek() == Some(Token::Comma) {
@@ -487,7 +486,7 @@ impl<'a> Parser<'a> {
         self.eat();
         while let Some(kind) = self.peek() {
             match kind {
-                Token::LineBreak | Token::Whitespace | Token::LineComment => self.eat(),
+                Token::LineBreak | Token::Whitespace => self.eat(),
                 Token::LCurly => self.curly_group(),
                 Token::LBrack | Token::LParen => self.mixed_group(),
                 _ => break,
@@ -740,8 +739,7 @@ impl<'a> Parser<'a> {
 
         while let Some(kind) = self.lexer.peek() {
             match kind {
-                Token::LineComment
-                | Token::Word
+                Token::Word
                 | Token::Eq
                 | Token::Comma
                 | Token::LBrack
@@ -775,7 +773,6 @@ impl<'a> Parser<'a> {
                 | Token::CommandName(CommandName::Generic) => self.path(),
                 Token::Whitespace
                 | Token::LineBreak
-                | Token::LineComment
                 | Token::Comma
                 | Token::Pipe => self.eat(),
                 Token::LCurly => self.curly_group_path(),
@@ -794,7 +791,6 @@ impl<'a> Parser<'a> {
         while let Some(kind) = self.peek() {
             match kind {
                 Token::Whitespace
-                | Token::LineComment
                 | Token::Word
                 | Token::Eq
                 | Token::LBrack
@@ -1302,6 +1298,41 @@ impl<'a> Parser<'a> {
         self.builder.finish_node();
     }
 
+    fn comment(&mut self) {
+        self.builder.start_node(COMMENT.into());
+        self.eat();
+        while self
+            .peek()
+            .filter(|&kind| {
+                matches!(
+                    kind,
+                    Token::LineBreak
+                ) 
+            })
+            .is_some()
+        {
+            self.eat();
+        }
+        self.builder.finish_node();
+    }
+
+    fn url(&mut self) {
+        self.builder.start_node(HREF.into());
+        self.eat();
+        while self
+            .peek()
+            .filter(|&kind| {
+                matches!(
+                    kind,
+                    Token::LineBreak
+                ) 
+            })
+            .is_some()
+        {
+            self.eat();
+        }
+        self.builder.finish_node();
+    }
 }
 
 pub fn parse_latex(text: &str, config: &SyntaxConfig) -> GreenNode {
