@@ -26,7 +26,7 @@ anyhow.workspace = true
 base-db = { path = "../base-db" }
 bibfmt = { path = "../bibfmt" }
 citeproc = { path = "../citeproc" }
-clap = { version = "4.5.21", features = ["derive"] }
+clap = { version = "4.5.27", features = ["derive"] }
 commands = { path = "../commands" }
 completion = { path = "../completion" }
 completion-data = { path = "../completion-data" }
@@ -34,7 +34,7 @@ crossbeam-channel.workspace = true
 definition = { path = "../definition" }
 diagnostics = { path = "../diagnostics" }
 distro = { path = "../distro" }
-fern = "0.7.0"
+fern = "0.7.1"
 folding = { path = "../folding" }
 formatter = { path = "../formatter" }
 highlights = { path = "../highlights" }
@@ -44,10 +44,10 @@ ipc = { path = "../ipc" }
 line-index = { path = "../line-index" }
 links = { path = "../links" }
 log.workspace = true
-lsp-server = "0.7.7"
+lsp-server = "0.7.8"
 lsp-types = "0.95.1"
+notify-debouncer-full.workspace = true
 notify.workspace = true
-notify-debouncer-full = "0.3.2"
 parking_lot = "0.12.3"
 parser = { path = "../parser" }
 references = { path = "../references" }
@@ -55,14 +55,15 @@ regex.workspace = true
 rename = { path = "../rename" }
 rowan.workspace = true
 rustc-hash.workspace = true
-serde.workspace = true
 serde_json.workspace = true
 serde_regex = "1.1.0"
 serde_repr = "0.1.19"
+serde.workspace = true
 symbols = { path = "../symbols" }
 syntax = { path = "../syntax" }
 tempfile.workspace = true
 threadpool = "1.8.1"
+titlecase.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true

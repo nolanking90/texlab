@@ -9,15 +9,15 @@ rust-version.workspace = true
 [dependencies]
 anyhow.workspace = true
 base-db = { path = "../base-db" }
-bstr = "1.11.0"
+bstr = "1.11.3"
 crossbeam-channel.workspace = true
 itertools.workspace = true
-libc = "0.2.167"
+libc = "0.2.169"
 log.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true
 syntax = { path = "../syntax" }
-thiserror = "2.0.3"
+thiserror = "2.0.11"
 url.workspace = true
 
 [dev-dependencies]

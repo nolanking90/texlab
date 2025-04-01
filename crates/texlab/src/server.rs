@@ -19,10 +19,11 @@ use line_index::LineCol;
 use lsp_server::{Connection, ErrorCode, Message, RequestId};
 use lsp_types::{notification::*, request::*, *};
 use notify::event::ModifyKind;
-use notify_debouncer_full::{DebouncedEvent, Debouncer, FileIdMap};
+use notify_debouncer_full::{DebouncedEvent, Debouncer, RecommendedCache};
 use parking_lot::{Mutex, RwLock};
 use rustc_hash::FxHashSet;
 use serde::{de::DeserializeOwned, Serialize};
+use serde_json::{Map, Value};
 use threadpool::ThreadPool;
 
 use crate::{
@@ -174,6 +175,13 @@ impl Server {
                 ..Default::default()
             }),
             inlay_hint_provider: Some(OneOf::Left(true)),
+            experimental: Some(Value::Object(Map::from_iter(
+                [
+                    ("textDocumentBuild".to_string(), Value::Bool(true)),
+                    ("textDocumentForwardSearch".to_string(), Value::Bool(true)),
+                ]
+                .into_iter(),
+            ))),
             ..ServerCapabilities::default()
         }
     }
@@ -1124,7 +1132,7 @@ impl Server {
 }
 
 struct FileWatcher {
-    watcher: Debouncer<notify::RecommendedWatcher, FileIdMap>,
+    watcher: Debouncer<notify::RecommendedWatcher, RecommendedCache>,
     watched_dirs: FxHashSet<PathBuf>,
 }
 
@@ -1143,6 +1151,6 @@ impl FileWatcher {
     }
 
     pub fn watch(&mut self, workspace: &mut Workspace) {
-        deps::watch(workspace, self.watcher.watcher(), &mut self.watched_dirs);
+        deps::watch(workspace, &mut self.watcher, &mut self.watched_dirs);
     }
 }

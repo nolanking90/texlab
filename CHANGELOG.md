@@ -5,12 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [5.22.1] - 2025-01-29
+
+### Security
+
+- Don't store IPC socket (`texlab.sock`) in temp directory
+  (see [CWE-379](https://cwe.mitre.org/data/definitions/379.html), [#1331](https://github.com/latex-lsp/texlab/pull/1331/))
+
+## [5.22.0] - 2025-01-26
 
 ### Added
 
 - Allow hovering over symbol-like commands (e. g. `\pi`) to show a unicode preview
   or a preview image if the client supports it ([#1261](https://github.com/latex-lsp/texlab/issues/1261))
+- Add `texlab.symbols.customEnvironments` setting for specifying additional environments that will be included in the document symbols
+  ([#1292](https://github.com/latex-lsp/texlab/issues/1292))
+- Add `texlab.experimental.labelReferenceRangeCommands` setting ([#1210](https://github.com/latex-lsp/texlab/issues/1210))
+- Add `tex-fmt` as a formatter for `latex` and `bibtex` ([#1320](https://github.com/latex-lsp/texlab/issues/1320))
+
+### Fixed
+
+- Fix parsing links with URL encoding ([#1279](https://github.com/latex-lsp/texlab/issues/1279))
+- Improve error message when `texlab.build.executable` does not exist ([#1303](https://github.com/latex-lsp/texlab/issues/1303))
 
 ## [5.21.0] - 2024-10-26
 

@@ -28,6 +28,7 @@ pub enum BibtexFormatter {
     None,
     Texlab,
     Latexindent,
+    TexFmt,
 }
 
 impl Default for BibtexFormatter {
@@ -42,6 +43,7 @@ pub enum LatexFormatter {
     None,
     Texlab,
     Latexindent,
+    TexFmt,
 }
 
 impl Default for LatexFormatter {
@@ -114,6 +116,16 @@ pub struct InlayHintOptions {
 pub struct SymbolOptions {
     pub allowed_patterns: Vec<RegexPattern>,
     pub ignored_patterns: Vec<RegexPattern>,
+    pub custom_environments: Vec<SymbolEnvironmentOptions>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[serde(default)]
+pub struct SymbolEnvironmentOptions {
+    pub name: String,
+    pub display_name: Option<String>,
+    pub label: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -132,6 +144,7 @@ pub struct ExperimentalOptions {
     pub label_definition_prefixes: Vec<(String, String)>,
     pub label_reference_commands: Vec<String>,
     pub label_reference_prefixes: Vec<(String, String)>,
+    pub label_reference_range_commands: Vec<String>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default, Serialize, Deserialize)]
