@@ -22,6 +22,7 @@ pub enum SyntaxKind {
 
     PREAMBLE,
     TEXT,
+    BLANKLINE,
     KEY,
     VALUE,
     KEY_VALUE_PAIR,
@@ -86,6 +87,7 @@ pub enum SyntaxKind {
     BIBITEM,
     TOC_CONTENTS_LINE,
     TOC_NUMBER_LINE,
+    HYPERSETUP,
     ROOT,
 }
 

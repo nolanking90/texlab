@@ -29,6 +29,7 @@ impl<'a> Lexer<'a> {
         let kind = match kind {
             Token::LineBreak => SyntaxKind::WHITESPACE,
             Token::Whitespace => SyntaxKind::WHITESPACE,
+            Token::Blankline => SyntaxKind::BLANKLINE,
             Token::LineComment => SyntaxKind::COMMENT,
             Token::LCurly => SyntaxKind::L_CURLY,
             Token::RCurly => SyntaxKind::R_CURLY,

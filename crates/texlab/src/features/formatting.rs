@@ -45,14 +45,17 @@ pub fn format_with_texlab(
     let root_node = document.data.as_tex()?.root_node();
     let config = workspace.config();
     let line_length = config.formatting.line_length;
+    log::debug!("LINE LENGTH: {}", line_length);
+    log::debug!("TAB STOP: {}", options.tab_size);
     let mut formatter = TexFormatter::new(options.tab_size as usize, line_length);
     let output = formatter.format(&root_node);
 
-    // For troubleshooting
+    //For troubleshooting
     //let mut lstgraph = LSTGraph::new();
-    //let _ = lstgraph.visit(&latex::SyntaxElement::Node(root_node));
+    //let _ = lstgraph.visit(&latex::SyntaxElement::Node(root_node.clone()));
     //let path = &document.path;
     //lstgraph.print_graph(path);
+    //lstgraph.print_tree(&root_node.clone(), path);
 
     let target_dir = tempdir().ok()?;
 

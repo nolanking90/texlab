@@ -79,81 +79,81 @@ fn test_filter_type_section() {
     check(
         "section",
         expect![[r#"
-        [
-            SymbolLocation {
-                document: Document(
-                    "file:///texlab/main.tex",
-                ),
-                symbol: Symbol {
-                    name: "1 Foo",
-                    kind: Section,
-                    label: Some(
-                        Span(
-                            "sec:foo",
-                            118..133,
-                        ),
+            [
+                SymbolLocation {
+                    document: Document(
+                        "file:///texlab/main.tex",
                     ),
-                    full_range: 105..188,
-                    selection_range: 118..133,
-                    children: [],
-                },
-            },
-            SymbolLocation {
-                document: Document(
-                    "file:///texlab/main.tex",
-                ),
-                symbol: Symbol {
-                    name: "2 Bar",
-                    kind: Section,
-                    label: Some(
-                        Span(
-                            "sec:bar",
-                            203..218,
+                    symbol: Symbol {
+                        name: "1 Foo",
+                        kind: Section,
+                        label: Some(
+                            Span(
+                                "sec:foo",
+                                118..133,
+                            ),
                         ),
-                    ),
-                    full_range: 190..293,
-                    selection_range: 203..218,
-                    children: [],
+                        full_range: 105..190,
+                        selection_range: 118..133,
+                        children: [],
+                    },
                 },
-            },
-            SymbolLocation {
-                document: Document(
-                    "file:///texlab/main.tex",
-                ),
-                symbol: Symbol {
-                    name: "3 Baz",
-                    kind: Section,
-                    label: Some(
-                        Span(
-                            "sec:baz",
-                            308..323,
+                SymbolLocation {
+                    document: Document(
+                        "file:///texlab/main.tex",
+                    ),
+                    symbol: Symbol {
+                        name: "2 Bar",
+                        kind: Section,
+                        label: Some(
+                            Span(
+                                "sec:bar",
+                                203..218,
+                            ),
                         ),
-                    ),
-                    full_range: 295..445,
-                    selection_range: 308..323,
-                    children: [],
+                        full_range: 190..295,
+                        selection_range: 203..218,
+                        children: [],
+                    },
                 },
-            },
-            SymbolLocation {
-                document: Document(
-                    "file:///texlab/main.tex",
-                ),
-                symbol: Symbol {
-                    name: "4 Qux",
-                    kind: Section,
-                    label: Some(
-                        Span(
-                            "sec:qux",
-                            460..475,
+                SymbolLocation {
+                    document: Document(
+                        "file:///texlab/main.tex",
+                    ),
+                    symbol: Symbol {
+                        name: "3 Baz",
+                        kind: Section,
+                        label: Some(
+                            Span(
+                                "sec:baz",
+                                308..323,
+                            ),
                         ),
-                    ),
-                    full_range: 447..557,
-                    selection_range: 460..475,
-                    children: [],
+                        full_range: 295..447,
+                        selection_range: 308..323,
+                        children: [],
+                    },
                 },
-            },
-        ]
-    "#]],
+                SymbolLocation {
+                    document: Document(
+                        "file:///texlab/main.tex",
+                    ),
+                    symbol: Symbol {
+                        name: "4 Qux",
+                        kind: Section,
+                        label: Some(
+                            Span(
+                                "sec:qux",
+                                460..475,
+                            ),
+                        ),
+                        full_range: 447..559,
+                        selection_range: 460..475,
+                        children: [],
+                    },
+                },
+            ]
+        "#]],
     );
 }
 

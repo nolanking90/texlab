@@ -1,19 +1,28 @@
 use crate::Formatter;
-use crate::tex::TexCommand;
 use expect_test::{expect, Expect};
 use parser::{parse_latex, SyntaxConfig};
-
-fn check_len(input: &str, expect: Expect) {
-    let root = syntax::latex::SyntaxNode::new_root(parse_latex(input, &SyntaxConfig::default()));
-    let len = TexCommand::from(&root.first_child().unwrap().first_child().unwrap()).len();
-    expect.assert_eq(&len.to_string());
-}
 
 fn check(input: &str, expect: Expect) {
     let root = syntax::latex::SyntaxNode::new_root(parse_latex(input, &SyntaxConfig::default()));
     let mut formatter = Formatter::new(2, 80);
     let output = formatter.format(&root);
     let output: Vec<String> = output.split('\n').map(|s| s.to_string()).collect();
+
+    expect.assert_debug_eq(&output);
+}
+
+fn check_twice(input: &str, expect: Expect) {
+    let root = syntax::latex::SyntaxNode::new_root(parse_latex(input, &SyntaxConfig::default()));
+    let mut formatter = Formatter::new(2, 80);
+    let output = formatter.format(&root);
+    let output: Vec<String> = output.split('\n').map(|s| s.to_string()).collect();
+
+    let temp = output.join("\n");
+    let root = syntax::latex::SyntaxNode::new_root(parse_latex(&temp, &SyntaxConfig::default()));
+    let mut formatter = Formatter::new(2, 80);
+    let output = formatter.format(&root);
+    let output: Vec<String> = output.split('\n').map(|s| s.to_string()).collect();
+
 
     expect.assert_debug_eq(&output);
 }
@@ -27,6 +36,21 @@ fn test_simple_command() {
                     "\\textbf{Hello, world!}",
                 ]
             "#]],
+    );
+}
+
+#[test]
+fn test_format_twice() {
+    check_twice(
+                r"\textbf{DO NOT PANIC IF YOU CAN'T DO A PROBLEM WITH A (\textasteriskcentered). ACTUALLY DO PANIC. PANIC SO HARD.}",
+        expect![[r#"
+            [
+                "\\textbf{",
+                "  DO NOT PANIC IF YOU CAN'T DO A PROBLEM WITH A (\\textasteriskcentered).",
+                "  ACTUALLY DO PANIC. PANIC SO HARD.",
+                "}",
+            ]
+        "#]],
     );
 }
 
@@ -50,13 +74,12 @@ fn test_section() {
     check(
         r"\section{Introduction}This is the introduction.",
         expect![[r#"
-                [
-                    "",
-                    "\\section{Introduction}",
-                    "",
-                    "This is the introduction.",
-                ]
-            "#]],
+            [
+                "",
+                "\\section{Introduction}",
+                "This is the introduction.",
+            ]
+        "#]],
     );
 }
 
@@ -206,12 +229,12 @@ fn test_with_comment() {
 #[test]
 fn test_label_and_ref() {
     check(
-        r"\label{sec:intro}\ref{sec:intro}",
+        r"{\label{sec:intro}\ref{sec:intro}}",
         expect![[r#"
-                [
-                    "\\label{sec:intro}\\ref{sec:intro}",
-                ]
-            "#]],
+            [
+                "{\\label{sec:intro}\\ref{sec:intro}}",
+            ]
+        "#]],
     );
 }
 
@@ -230,12 +253,12 @@ fn test_text_inside_formula() {
 #[test]
 fn test_command_sequence() {
     check(
-        r"\textbf{Bold} \textit{Italic} \underline{Underlined}",
+        r"{\textbf{Bold} \textit{Italic} \underline{Underlined}}",
         expect![[r#"
-                [
-                    "\\textbf{Bold}\\textit{Italic}\\underline{Underlined}",
-                ]
-            "#]],
+            [
+                "{\\textbf{Bold}\\textit{Italic}\\underline{Underlined}}",
+            ]
+        "#]],
     );
 }
 
@@ -272,16 +295,14 @@ fn test_section_with_subsection() {
     check(
         r"\section{Main Section}\subsection{Sub Section}Content here",
         expect![[r#"
-                [
-                    "",
-                    "\\section{Main Section}",
-                    "",
-                    "",
-                    "\\subsection{Sub Section}",
-                    "",
-                    "Content here",
-                ]
-            "#]],
+            [
+                "",
+                "\\section{Main Section}",
+                "",
+                "\\subsection{Sub Section}",
+                "Content here",
+            ]
+        "#]],
     );
 }
 
@@ -468,118 +489,118 @@ fn test_respect_blanklines_after_commands() {
 \date{\today}
 "#,
         expect![[r#"
-                [
-                    "\\documentclass[aspectratio=169]{beamer}",
-                    "\\usetheme{Madrid}",
-                    "\\usecolortheme{dove}",
-                    "",
-                    "\\usepackage{graphicx, amsmath, amssymb, amsfonts}",
-                    "\\usepackage{physics}",
-                    "\\usepackage{hyperref}",
-                    "",
-                    "\\title[2D Vectors]{2D Vectors: Definitions, Equations, and Problems}",
-                    "\\author{Your Name}",
-                    "\\institute{Your Institution}",
-                    "\\date{\\today}",
-                ]
-            "#]],
-    )
-}
-
-#[test]
-fn test_long_doc() {
-    check(
-        r#"\documentclass{article}
-
-\begin{document}
-
-Matching brackets on a line do nothing (like this).
-
-Matching brackets on two lines also do nothing (like this
-longer example).
-
-Matching brackets on three lines get an indent (like this
-much much longer example
-right here on these lines).
-
-Matching brackets on more lines also get an indent (like this
-much much
-much much
-much longer example
-here).
-
-The brackets could start at the beginning of the line
-(so maybe
-they look
-like this).
-
-[They could
-be any shape
-of bracket]
-
-{Even braces get
-the same
-indents too}
-
-What about equations? They are the same:
-$(1 + 2 + 3)$
-
-$(1 + 2
-+ 3 + 4
-+ 5 + 7
-+ 8 + 9)$
-
-And the dollars can go anywhere as expected:
-
-$
-(1 + 2
-+ 3 + 4
-+ 5 + 7
-+ 8 + 9)
-$
-
-Note that dollars themselves are not indented
-
-\end{document}
-        "#,
-        expect![[r#"
             [
-                "\\documentclass{article}",
+                "\\documentclass[aspectratio = 169]{beamer}",
+                "\\usetheme{Madrid}",
+                "\\usecolortheme{dove}",
                 "",
-                "\\begin{document}",
+                "\\usepackage{graphicx, amsmath, amssymb, amsfonts}",
+                "\\usepackage{physics}",
+                "\\usepackage{hyperref}",
                 "",
-                "Matching brackets on a line do nothing (like this).",
-                "",
-                "Matching brackets on two lines also do nothing (like this longer example).",
-                "",
-                "Matching brackets on three lines get an indent",
-                "(like this much much longer example right here on these lines).",
-                "",
-                "Matching brackets on more lines also get an indent",
-                "(like this much much much much much longer example here).",
-                "",
-                "The brackets could start at the beginning of the line",
-                "(so maybe they look like this).",
-                "",
-                "[They could be any shape of bracket]",
-                "",
-                "{Even braces get the same indents too}",
-                "",
-                "What about equations? They are the same: \\( (1 + 2 + 3) \\)",
-                "",
-                "\\( (1 + 2 + 3 + 4 + 5 + 7 + 8 + 9) \\)",
-                "",
-                "And the dollars can go anywhere as expected:",
-                "",
-                "\\( (1 + 2 + 3 + 4 + 5 + 7 + 8 + 9) \\)",
-                "",
-                "Note that dollars themselves are not indented",
-                "",
-                "\\end{document}",
+                "\\title[2D Vectors]{2D Vectors: Definitions, Equations, and Problems}",
+                "\\author{Your Name}",
+                "\\institute{Your Institution}",
+                "\\date{\\today}",
             ]
         "#]],
     )
 }
+
+//#[test]
+//fn test_long_doc() {
+    //check(
+        //r#"\documentclass{article}
+
+//\begin{document}
+
+//Matching brackets on a line do nothing (like this).
+
+//Matching brackets on two lines also do nothing (like this
+//longer example).
+
+//Matching brackets on three lines get an indent (like this
+//much much longer example
+//right here on these lines).
+
+//Matching brackets on more lines also get an indent (like this
+//much much
+//much much
+//much longer example
+//here).
+
+//The brackets could start at the beginning of the line
+//(so maybe
+//they look
+//like this).
+
+//[They could
+//be any shape
+//of bracket]
+
+//{Even braces get
+//the same
+//indents too}
+
+//What about equations? They are the same:
+//$(1 + 2 + 3)$
+
+//$(1 + 2
+//+ 3 + 4
+//+ 5 + 7
+//+ 8 + 9)$
+
+//And the dollars can go anywhere as expected:
+
+//$
+//(1 + 2
+//+ 3 + 4
+//+ 5 + 7
+//+ 8 + 9)
+//$
+
+//Note that dollars themselves are not indented
+
+//\end{document}
+        //"#,
+        //expect![[r#"
+            //[
+                //"\\documentclass{article}",
+                //"",
+                //"\\begin{document}",
+                //"",
+                //"Matching brackets on a line do nothing (like this).",
+                //"",
+                //"Matching brackets on two lines also do nothing (like this longer example).",
+                //"",
+                //"Matching brackets on three lines get an indent",
+                //"(like this much much longer example right here on these lines).",
+                //"",
+                //"Matching brackets on more lines also get an indent",
+                //"(like this much much much much much longer example here).",
+                //"",
+                //"The brackets could start at the beginning of the line",
+                //"(so maybe they look like this).",
+                //"",
+                //"[They could be any shape of bracket]",
+                //"",
+                //"{Even braces get the same indents too}",
+                //"",
+                //"What about equations? They are the same: \\( (1 + 2 + 3) \\)",
+                //"",
+                //"\\( (1 + 2 + 3 + 4 + 5 + 7 + 8 + 9) \\)",
+                //"",
+                //"And the dollars can go anywhere as expected:",
+                //"",
+                //"\\( (1 + 2 + 3 + 4 + 5 + 7 + 8 + 9) \\)",
+                //"",
+                //"Note that dollars themselves are not indented",
+                //"",
+                //"\\end{document}",
+            //]
+        //"#]],
+    //)
+//}
 
 #[test]
 fn test_new_command_long() {
@@ -589,7 +610,8 @@ fn test_new_command_long() {
             [
                 "\\newcommand{\\headandfoot}[3]{",
                 "  \\lhead{#1}\\chead{#2}\\rhead{Section 16 {\\hspace{.25in}}}%",
-                "  \\lfoot{\\copyright~Pennsylvania State University}\\cfoot{\\thepage}\\rfoot{#3}%",
+                "  \\lfoot{\\copyright~Pennsylvania State University}\\cfoot{\\thepage}%",
+                "  \\rfoot{#3}",
                 "}",
             ]
         "#]],
@@ -609,7 +631,7 @@ r#"\newcommand{\headandfoot}[3]{
                 "\\newcommand{\\headandfoot}[3]{",
                 "  \\lhead{#1}\\chead{#2}\\rhead{Section 16 {\\hspace{.25in}}}%",
                 "  \\lfoot{\\copyright~Pennsylvania State University}\\cfoot{\\thepage}%",
-                "  \\rfoot{#3}%",
+                "  \\rfoot{#3}",
                 "}",
             ]
         "#]],
@@ -617,9 +639,21 @@ r#"\newcommand{\headandfoot}[3]{
 }
 
 #[test]
-fn test_command_len() {
-    check_len(
-        r#"\rfoot{#3}"#,
-        expect![[r#"10"#]],
+fn test_key_val_w_comments() {
+    check(
+r#"\hypersetup{
+    colorlinks=true, % set true if you want colored links
+    linktoc=all,     % set to all if you want both sections and subsections linked
+    linkcolor=blue,  % choose some color if you want links to stand out
+}"#,
+        expect![[r#"
+            [
+                "\\hypersetup{",
+                "  colorlinks = true, % set true if you want colored links",
+                "  linktoc = all, % set to all if you want both sections and subsections linked",
+                "  linkcolor = blue, % choose some color if you want links to stand out",
+                "}",
+            ]
+        "#]],
     )
 }

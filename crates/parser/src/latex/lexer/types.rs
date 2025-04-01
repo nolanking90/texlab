@@ -4,8 +4,11 @@ use crate::util::lex_command_name;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Logos)]
 pub enum Token {
-    #[regex(r"[\r\n]+", priority = 2)]
+    #[regex(r"[\r\n]", priority = 2)]
     LineBreak,
+
+    #[regex(r"[\r\n]{2,}", priority = 1)]
+    Blankline,
 
     #[regex(r"[^\S\r\n]+", priority = 1)]
     Whitespace,
@@ -101,6 +104,7 @@ pub enum CommandName {
     BibItem,
     TocContentsLine,
     TocNumberLine,
+    HyperSetup,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]

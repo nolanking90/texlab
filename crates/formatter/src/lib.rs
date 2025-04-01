@@ -1,9 +1,13 @@
+#![allow(dead_code)]
 use syntax::latex::SyntaxNode;
 
 pub mod lstgraph;
 mod tex;
 use tex::TexElement;
 mod math;
+mod doc;
+mod formattable;
+use crate::formattable::Formattable;
 
 pub struct FormatContext {
     tabstop: usize,
@@ -28,7 +32,7 @@ impl Formatter {
 
     pub fn format(&mut self, root: &SyntaxNode) -> String {
         self.doc = TexElement::from(root);
-        self.doc.format(0, self.context.tabstop, self.context.line_length, self.context.line_length).join("\n")
+        self.doc.format(0, self.context.tabstop, self.context.line_length).join("\n")
     }
 }
 

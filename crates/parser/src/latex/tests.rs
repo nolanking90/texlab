@@ -2434,15 +2434,16 @@ fn test_issue_745() {
                       WORD@15..22 "article"
                     R_CURLY@22..23 "}"
                     WHITESPACE@23..24 "\n"
-                PACKAGE_INCLUDE@24..50
+                PACKAGE_INCLUDE@24..48
                   COMMAND_NAME@24..35 "\\usepackage"
-                  CURLY_GROUP_WORD_LIST@35..50
+                  CURLY_GROUP_WORD_LIST@35..48
                     L_CURLY@35..36 "{"
                     KEY@36..46
                       WORD@36..46 "tabularray"
                     R_CURLY@46..47 "}"
                     WHITESPACE@47..48 " "
-                    WHITESPACE@48..50 "\n\n"
+                BLANKLINE@48..50
+                  BLANKLINE@48..50 "\n\n"
                 GENERIC_COMMAND@50..64
                   COMMAND_NAME@50..63 "\\ExplSyntaxOn"
                   WHITESPACE@63..64 "\n"
@@ -2530,18 +2531,20 @@ fn test_issue_745() {
                       WHITESPACE@217..221 "    "
                   R_CURLY@221..222 "}"
                   WHITESPACE@222..223 "\n"
-                GENERIC_COMMAND@223..239
+                GENERIC_COMMAND@223..237
                   COMMAND_NAME@223..237 "\\ExplSyntaxOff"
-                  WHITESPACE@237..239 "\n\n"
+                BLANKLINE@237..239
+                  BLANKLINE@237..239 "\n\n"
                 ENVIRONMENT@239..271
-                  BEGIN@239..257
+                  BEGIN@239..255
                     COMMAND_NAME@239..245 "\\begin"
-                    CURLY_GROUP_WORD@245..257
+                    CURLY_GROUP_WORD@245..255
                       L_CURLY@245..246 "{"
                       KEY@246..254
                         WORD@246..254 "document"
                       R_CURLY@254..255 "}"
-                      WHITESPACE@255..257 "\n\n"
+                  BLANKLINE@255..257
+                    BLANKLINE@255..257 "\n\n"
                   END@257..271
                     COMMAND_NAME@257..261 "\\end"
                     CURLY_GROUP_WORD@261..271
@@ -2761,14 +2764,15 @@ fn test_issue_919() {
         expect![[r#"
             ROOT@0..217
               PREAMBLE@0..217
-                CLASS_INCLUDE@0..25
+                CLASS_INCLUDE@0..23
                   COMMAND_NAME@0..14 "\\documentclass"
-                  CURLY_GROUP_WORD_LIST@14..25
+                  CURLY_GROUP_WORD_LIST@14..23
                     L_CURLY@14..15 "{"
                     KEY@15..22
                       WORD@15..22 "article"
                     R_CURLY@22..23 "}"
-                    WHITESPACE@23..25 "\n\n"
+                BLANKLINE@23..25
+                  BLANKLINE@23..25 "\n\n"
                 PACKAGE_INCLUDE@25..50
                   COMMAND_NAME@25..36 "\\usepackage"
                   CURLY_GROUP_WORD_LIST@36..50
@@ -2796,7 +2800,8 @@ fn test_issue_919() {
                   WHITESPACE@169..170 "\n"
                 ERROR@170..171
                   R_CURLY@170..171 "}"
-                WHITESPACE@171..173 "\n\n"
+                BLANKLINE@171..173
+                  BLANKLINE@171..173 "\n\n"
                 ENVIRONMENT@173..217
                   BEGIN@173..194
                     COMMAND_NAME@173..179 "\\begin"
@@ -3155,11 +3160,12 @@ Section 2"#,
                       WORD@17..18 "1"
                     R_CURLY@18..19 "}"
                     WHITESPACE@19..20 "\n"
-                  TEXT@20..31
+                  TEXT@20..29
                     WORD@20..27 "Section"
                     WHITESPACE@27..28 " "
                     WORD@28..29 "1"
-                    WHITESPACE@29..31 "\n\n"
+                  BLANKLINE@29..31
+                    BLANKLINE@29..31 "\n\n"
                   PARAGRAPH@31..68
                     COMMAND_NAME@31..41 "\\paragraph"
                     CURLY_GROUP@41..55
@@ -3170,11 +3176,12 @@ Section 2"#,
                         WORD@52..53 "1"
                       R_CURLY@53..54 "}"
                       WHITESPACE@54..55 "\n"
-                    TEXT@55..68
+                    TEXT@55..66
                       WORD@55..64 "Paragraph"
                       WHITESPACE@64..65 " "
                       WORD@65..66 "1"
-                      WHITESPACE@66..68 "\n\n"
+                    BLANKLINE@66..68
+                      BLANKLINE@66..68 "\n\n"
                   PARAGRAPH@68..105
                     COMMAND_NAME@68..78 "\\paragraph"
                     CURLY_GROUP@78..92
@@ -3185,11 +3192,12 @@ Section 2"#,
                         WORD@89..90 "2"
                       R_CURLY@90..91 "}"
                       WHITESPACE@91..92 "\n"
-                    TEXT@92..105
+                    TEXT@92..103
                       WORD@92..101 "Paragraph"
                       WHITESPACE@101..102 " "
                       WORD@102..103 "2"
-                      WHITESPACE@103..105 "\n\n"
+                    BLANKLINE@103..105
+                      BLANKLINE@103..105 "\n\n"
                 SECTION@105..134
                   COMMAND_NAME@105..113 "\\section"
                   CURLY_GROUP@113..125

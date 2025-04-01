@@ -99,6 +99,7 @@ pub fn classify(name: &str, config: &SyntaxConfig) -> CommandName {
         "bibitem" => CommandName::BibItem,
         "contentsline" => CommandName::TocContentsLine,
         "numberline" => CommandName::TocNumberLine,
+        "hypersetup" => CommandName::HyperSetup,
 
         _ if config.citation_commands.contains(name) => CommandName::Citation,
         _ if config.label_definition_commands.contains(name) => CommandName::LabelDefinition,

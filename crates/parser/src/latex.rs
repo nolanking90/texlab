@@ -103,6 +103,7 @@ impl<'a> Parser<'a> {
         match self.peek().unwrap() {
             Token::LineBreak | Token::Whitespace => self.eat(),
             Token::LineComment => self.comment(),
+            Token::Blankline => self.blankline(),
             Token::LCurly if context.allow_environment => self.curly_group(),
             Token::LCurly => self.curly_group_without_environments(),
             Token::LBrack | Token::LParen => self.mixed_group(),
@@ -163,6 +164,7 @@ impl<'a> Parser<'a> {
                 CommandName::BibItem => self.bibitem(),
                 CommandName::TocContentsLine => self.toc_contents_line(),
                 CommandName::TocNumberLine => self.toc_number_line(),
+                CommandName::HyperSetup => self.hyperref_setup(),
             },
         }
     }
@@ -430,6 +432,7 @@ impl<'a> Parser<'a> {
         while let Some(kind) = self.peek() {
             match kind {
                 Token::LineBreak | Token::Whitespace => self.eat(),
+                Token::LineComment => self.comment(),
                 Token::Word | Token::Pipe => {
                     self.key_value_pair();
                     if self.peek() == Some(Token::Comma) {
@@ -1332,6 +1335,25 @@ impl<'a> Parser<'a> {
             self.eat();
         }
         self.builder.finish_node();
+    }
+
+    fn blankline(&mut self) {
+        self.builder.start_node(BLANKLINE.into());
+        self.eat();
+        self.builder.finish_node();
+    }
+
+    fn hyperref_setup(&mut self) {
+        self.builder.start_node(HYPERSETUP.into());
+        self.eat();
+        self.trivia();
+
+        if self.lexer.peek() == Some(Token::LCurly) {
+            self.curly_group_key_value();
+        }
+
+        self.builder.finish_node();
+
     }
 }
 

@@ -286,8 +286,8 @@ fn test_section() {
                     name: "1 Foo",
                     kind: Section,
                     label: None,
-                    full_range: 43..56,
-                    selection_range: 43..56,
+                    full_range: 43..58,
+                    selection_range: 43..58,
                     children: [],
                 },
                 Symbol {
@@ -299,7 +299,7 @@ fn test_section() {
                             71..86,
                         ),
                     ),
-                    full_range: 58..119,
+                    full_range: 58..121,
                     selection_range: 71..86,
                     children: [
                         Symbol {
@@ -311,7 +311,7 @@ fn test_section() {
                                     104..119,
                                 ),
                             ),
-                            full_range: 88..119,
+                            full_range: 88..121,
                             selection_range: 104..119,
                             children: [],
                         },
