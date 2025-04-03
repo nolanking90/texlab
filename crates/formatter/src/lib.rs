@@ -5,7 +5,6 @@ pub mod lstgraph;
 mod tex;
 use tex::TexElement;
 mod math;
-mod doc;
 mod formattable;
 use crate::formattable::Formattable;
 

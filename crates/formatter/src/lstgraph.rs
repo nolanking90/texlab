@@ -177,10 +177,10 @@ impl LSTGraph {
 
         let png_filename = match path.clone() {
             Some(mut path) => {
-                path.set_file_name("graph.svg");
+                path.set_file_name("graphCustom.svg");
                 path
             }
-            None => PathBuf::from("graph.svg"),
+            None => PathBuf::from("graphCustom.svg"),
         };
 
         let output = Command::new("dot")
