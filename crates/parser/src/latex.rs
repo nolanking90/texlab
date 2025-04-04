@@ -261,7 +261,6 @@ impl<'a> Parser<'a> {
         self.builder.start_node(CURLY_GROUP_WORD_LIST.into());
         self.eat();
 
-        let mut num_lcurly = 1;
         while self
             .peek()
             .filter(|&kind| {
@@ -280,16 +279,13 @@ impl<'a> Parser<'a> {
             if self.peek() == Some(Token::Word) {
                 self.key();
             } else if self.peek() == Some(Token::LCurly) {
-                num_lcurly += 1;
-                self.eat()
+                self.curly_group_word_list();
             } else {
                 self.eat();
             }
         }
 
-        for _ in 0..num_lcurly {
-            self.expect(Token::RCurly);
-        }
+        self.expect(Token::RCurly);
         self.builder.finish_node();
     }
 
