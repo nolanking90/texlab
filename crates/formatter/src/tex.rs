@@ -277,7 +277,12 @@ impl TexEnvironment {
         let opt_args: Vec<SyntaxNode> = first_child
             .children()
             .filter(|child| {
-                child.kind() == SyntaxKind::BRACK_GROUP || child.kind() == SyntaxKind::CURLY_GROUP
+                matches!(
+                    child.kind(),
+                    SyntaxKind::BRACK_GROUP
+                        | SyntaxKind::CURLY_GROUP
+                        //| SyntaxKind::CURLY_GROUP_WORD_LIST
+                )
             })
             .collect();
         let opt_args = TexElement::Text(
@@ -319,7 +324,7 @@ impl TexEnvironment {
     }
 }
 
-pub struct TexKeyValParent{
+pub struct TexKeyValParent {
     pub children: Vec<TexElement>,
 }
 
@@ -332,7 +337,6 @@ impl TexKeyValParent {
                 .collect(),
         }
     }
-
 }
 
 pub struct TexKeyVal {
@@ -372,7 +376,6 @@ impl TexEnumItem {
         }
     }
 }
-
 
 pub struct TexFormula {
     pub inline: bool,

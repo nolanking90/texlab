@@ -542,6 +542,10 @@ impl<'a> Parser<'a> {
             self.curly_group();
         }
 
+        //if self.peek() == Some(Token::LCurly) {
+            //self.curly_group_word_list();
+        //}
+
         self.builder.finish_node();
     }
 
