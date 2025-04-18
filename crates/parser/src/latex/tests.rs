@@ -2583,20 +2583,20 @@ fn test_issue_828() {
         expect![[r#"
             ROOT@0..51
               PREAMBLE@0..51
-                GENERIC_COMMAND@0..5
+                VERBATIM@0..51
                   COMMAND_NAME@0..5 "\\verb"
-                VERBATIM@5..6 "|"
-                VERBATIM@6..17 "<STATEMENT>"
-                VERBATIM@17..22 "     "
-                VERBATIM@22..24 "if"
-                VERBATIM@24..25 "("
-                VERBATIM@25..31 "<expr>"
-                VERBATIM@31..32 ")"
-                VERBATIM@32..33 "{"
-                VERBATIM@33..43 "<body>else"
-                VERBATIM@43..44 "{"
-                VERBATIM@44..50 "<body>"
-                VERBATIM@50..51 "|"
+                  VERBATIM@5..6 "|"
+                  VERBATIM@6..17 "<STATEMENT>"
+                  VERBATIM@17..22 "     "
+                  VERBATIM@22..24 "if"
+                  VERBATIM@24..25 "("
+                  VERBATIM@25..31 "<expr>"
+                  VERBATIM@31..32 ")"
+                  VERBATIM@32..33 "{"
+                  VERBATIM@33..43 "<body>else"
+                  VERBATIM@43..44 "{"
+                  VERBATIM@44..50 "<body>"
+                  VERBATIM@50..51 "|"
 
         "#]],
     );

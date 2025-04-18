@@ -657,3 +657,33 @@ r#"\hypersetup{
         "#]],
     )
 }
+
+#[test]
+fn test_array_in_align() {
+    check(
+r#"\begin{align*}
+&\frac{\partial(F_1,F_2)}{\partial(c,\omega)}_{(c_0,\omega_0)} = \left|
+\begin{array}{ll}
+\frac{\partial F_1}{\partial c} &\frac{\partial F_1}{\partial \omega} \\\noalign{\vskip3pt}
+\frac{\partial F_2}{\partial c}&\frac{\partial F_2}{\partial \omega}
+\end{array}\right|_{(c_0,\omega_0)}\\
+&\quad=-4c_0q\omega_0 -4c_0\omega_0p^2 =-4c_0\omega_0(q+p^2)>0.
+\end{align*}
+}"#,
+        expect![[r#"
+            [
+                "\\begin{align*}",
+                "                                                      & \\frac{\\partial(F_1, F_2)}{\\partial(c,\\omega)}_ {(c_0,\\omega_0)} = \\left |  ",
+                "  \\begin{array}{ll}                                  ",
+                "  \\frac{\\partial F_1}{\\partial c}                     & \\frac{\\partial F_1}{\\partial \\omega} \\\\                                    ",
+                "  \\noalign{\\vskip3pt} \\frac{\\partial F_2}{\\partial c} &                                                                            ",
+                "  \\frac{\\partial F_2}{\\partial \\omega}               ",
+                "  \\end{array}                                        ",
+                "  \\right |_ {(c_0,\\omega_0)} \\\\                      ",
+                "                                                      & \\quad = - 4c_0q \\omega_0 - 4c_0 \\omega_0p^2 = - 4c_0 \\omega_0(q + p^2) > 0.",
+                "\\end{align*}",
+                "}",
+            ]
+        "#]],
+    )
+}

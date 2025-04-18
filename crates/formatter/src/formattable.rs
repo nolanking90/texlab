@@ -44,6 +44,7 @@ impl Formattable for TexElement {
             TexElement::Comment(comment) => comment.format(indent_level, tabstop, line_length),
             TexElement::Blankline => vec!["\n\n".to_string()],
             TexElement::KeyValBody(keyval) => keyval.format(indent_level, tabstop, line_length),
+            TexElement::Verbatim(_tex_verbatim) => todo!(),
         }
     }
 }
@@ -106,6 +107,8 @@ impl Formattable for TexParent {
                                         | Some(',')
                                         | Some(';')
                                         | Some('~')
+                                        | Some('+')
+                                        | Some('|')
                                 )
                             {
                                 continue;
@@ -282,6 +285,11 @@ impl Formattable for TexParent {
                 }
                 TexElement::Comment(comment) => {
                     line.push_str(&comment.format(indent_level, tabstop, line_length)[0]);
+                    output.push(line);
+                    line = indent_str(indent_level, tabstop);
+                }
+                TexElement::Verbatim(verb) => {
+                    line.push_str(&verb.format(indent_level, tabstop, line_length)[0]);
                     output.push(line);
                     line = indent_str(indent_level, tabstop);
                 }
@@ -589,7 +597,7 @@ impl Formattable for MathParent {
             match child {
                 MathElement::Command(cmd) => {
                     let fmt = cmd
-                        .format(indent_level, tabstop, line_length - line.len())
+                        .format(indent_level, tabstop, line_length)
                         .join("")
                         .trim()
                         .to_string();
@@ -642,21 +650,10 @@ impl Formattable for MathParent {
                     }
                 }
                 MathElement::Environment(env) => {
-                    if !line.trim().is_empty() {
-                        output.push(line);
-                        line = String::new();
-                    }
-                    output.extend(env.format(indent_level, tabstop, line_length));
+                    flush_and_extend(&mut output, &mut line, env, indent_level, tabstop, line_length);
                 }
                 MathElement::Parent(p) => {
-                    if !line.trim().is_empty() {
-                        output.push(line.to_string());
-                        line = String::new();
-                    }
-                    let fmt = p.format(indent_level, tabstop, line_length);
-                    if !fmt.join("").trim().is_empty() {
-                        output.extend(fmt);
-                    }
+                    flush_and_extend(&mut output, &mut line, p, indent_level, tabstop, line_length);
                 }
                 MathElement::CurlyGroup(group) => {
                     line.push_str(
@@ -723,6 +720,21 @@ impl Formattable for MathParent {
             .map(|line| format!("{}{}", indent_str(indent_level, tabstop), line))
             .collect()
     }
+}
+
+impl Formattable for MathElement {
+    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
+        match self {
+            MathElement::Command(cmd) => cmd.format(indent_level, tabstop, line_length),
+            MathElement::Environment(env) => env.format(indent_level, tabstop, line_length),
+            MathElement::Text(text) => vec![text.to_string().trim().to_string()],
+            MathElement::Parent(p) => p.format(indent_level, tabstop, line_length),
+            MathElement::CurlyGroup(group) => group.format(indent_level, tabstop, line_length),
+            MathElement::BrackGroup(group) => group.format(indent_level, tabstop, line_length),
+            MathElement::MixedGroup(group) => group.format(indent_level, tabstop, line_length),
+        }
+    }
+
 }
 
 impl Formattable for MathBrackGroup {
@@ -804,5 +816,11 @@ impl Formattable for MathEnvironment {
         lines.push(format!("{}\\end{{{}}}", indent, self.name));
 
         lines
+    }
+}
+
+impl Formattable for TexVerbatim {
+    fn format(&self, _indent_level: usize, _tabstop: usize, _line_length: usize) -> Vec<String> {
+        vec![self.body.clone()]
     }
 }

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use syntax::latex::{SyntaxElement, SyntaxKind, SyntaxNode};
 
-use crate::formattable::indent_str;
+use crate::formattable::{indent_str, Formattable};
 
 fn split_after_indices(s: String, indices: &Vec<isize>) -> Vec<String> {
     let len = s.len() as isize;
@@ -80,17 +80,6 @@ impl MathElement {
         }
     }
 
-    pub fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
-        match self {
-            MathElement::Command(cmd) => cmd.format(indent_level, tabstop, line_length),
-            MathElement::Environment(env) => env.format(indent_level, tabstop, line_length),
-            MathElement::Text(text) => vec![text.to_string().trim().to_string()],
-            MathElement::Parent(p) => p.format(indent_level, tabstop, line_length),
-            MathElement::CurlyGroup(group) => group.format(indent_level, tabstop, line_length),
-            MathElement::BrackGroup(group) => group.format(indent_level, tabstop, line_length),
-            MathElement::MixedGroup(group) => group.format(indent_level, tabstop, line_length),
-        }
-    }
 }
 
 pub struct MathParent {
@@ -105,148 +94,6 @@ impl MathParent {
                 .map(|child| MathElement::from(&child))
                 .collect(),
         }
-    }
-
-    pub fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
-        let mut output = Vec::new();
-        let mut line = String::new();
-        for (i, child) in self.children.iter().enumerate() {
-            match child {
-                MathElement::Command(cmd) => {
-                    let fmt = cmd
-                        .format(indent_level, tabstop, line_length - line.len())
-                        .join("")
-                        .trim()
-                        .to_string();
-                    if fmt.len() + line.len() > line_length {
-                        if !line.trim().is_empty() {
-                            output.push(line);
-                            line = String::new();
-                        }
-                        let fmt = cmd.format(indent_level, tabstop, line_length);
-                        if fmt.len() == 1 {
-                            line.push_str(fmt[0].trim_end());
-                        } else { 
-                            output.extend(fmt[..fmt.len() - 1].to_vec());
-                            line.push_str(&fmt[fmt.len() - 1]);
-                        }
-                    } else {
-                        line.push_str(&fmt);
-                    }
-                    if line.ends_with("\\\\") {
-                        output.push(line.trim().to_string());
-                        line = String::new();
-                    } else {
-                        if let Some(MathElement::Text(txt)) = self.children.get(i + 1) {
-                            if !matches!(
-                                txt.chars().nth(0),
-                                Some(',') | Some('^') | Some('_') | Some('\'') | Some('.')
-                            ) {
-                                line.push(' ');
-                            }
-                        }
-                        if let Some(MathElement::Command(_)) = self.children.get(i + 1) {
-                            line.push(' ');
-                        }
-                    }
-                }
-                MathElement::Text(text) if !(text.trim().is_empty()) => {
-                    line.push_str(text.trim());
-                    if i != self.children.len() - 1 && !line.ends_with('^') {
-                        if let Some(MathElement::MixedGroup(_)) = self.children.get(i + 1) {
-                        } else if let Some(MathElement::Text(txt)) = self.children.get(i + 1) {
-                            if !matches!(txt.chars().nth(0), Some('^'))
-                                && (!line.ends_with('&')
-                                    || !matches!(txt.chars().nth(0), Some('=')))
-                            {
-                                line.push(' ');
-                            }
-                        } else {
-                            line.push(' ');
-                        }
-                    }
-                }
-                MathElement::Environment(env) => {
-                    if !line.trim().is_empty() {
-                        output.push(line);
-                        line = String::new();
-                    }
-                    output.extend(env.format(indent_level, tabstop, line_length));
-                }
-                MathElement::Parent(p) => {
-                    if !line.trim().is_empty() {
-                        output.push(line.to_string());
-                        line = String::new();
-                    }
-                    let fmt = p.format(indent_level, tabstop, line_length);
-                    if !fmt.join("").trim().is_empty() {
-                        output.extend(fmt);
-                    }
-                }
-                MathElement::CurlyGroup(group) => {
-                    line.push_str(
-                        group
-                            .format(indent_level, tabstop, line_length)
-                            .join("")
-                            .trim(),
-                    );
-                    if let Some(MathElement::Text(txt)) = self.children.get(i + 1) {
-                        if !matches!(
-                            txt.chars().nth(0),
-                            Some('.') | Some(',') | Some('^') | Some('_') | Some('-')
-                        ) {
-                            line.push(' ');
-                        }
-                    }
-                    if let Some(MathElement::Command(_)) = self.children.get(i + 1) {
-                        line.push(' ');
-                    }
-                }
-                MathElement::BrackGroup(group) => {
-                    line.push_str(
-                        group
-                            .format(indent_level, tabstop, line_length)
-                            .join("")
-                            .trim(),
-                    );
-                    if let Some(MathElement::Text(txt)) = self.children.get(i + 1) {
-                        if !matches!(
-                            txt.chars().nth(0),
-                            Some('.') | Some(',') | Some('^') | Some('_') | Some('-')
-                        ) {
-                            line.push(' ');
-                        }
-                    }
-                }
-                MathElement::MixedGroup(group) => {
-                    line.push_str(
-                        group
-                            .format(indent_level, tabstop, line_length)
-                            .join("")
-                            .trim(),
-                    );
-                    if let Some(MathElement::Text(txt)) = self.children.get(i + 1) {
-                        if !matches!(
-                            txt.chars().nth(0),
-                            Some('.') | Some(',') | Some('^') | Some('_') | Some('-')
-                        ) {
-                            line.push(' ');
-                        }
-                    }
-                    if let Some(MathElement::Command(_)) = self.children.get(i + 1) {
-                        line.push(' ');
-                    }
-                }
-                _ => {}
-            }
-        }
-        if !line.trim().is_empty() {
-            output.push(line.trim_end().to_string());
-        }
-        output
-            .iter()
-            .map(|line| format!("{}{}", indent_str(indent_level, tabstop), line))
-            .collect()
     }
 }
 
@@ -274,13 +121,6 @@ impl MathBrackGroup {
         Self { children }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
-        let mut output = Vec::new();
-        for child in self.children.iter() {
-            output.extend(child.format(indent_level, tabstop, line_length));
-        }
-        vec![format!("[{}]", output.join(", "))]
-    }
 }
 
 pub struct MathCurlyGroup {
@@ -294,18 +134,6 @@ impl MathCurlyGroup {
         }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
-        let mut output = Vec::new();
-        let bodytext = self.body.format(indent_level, tabstop, line_length);
-        for line in bodytext {
-            output.push(line.trim().to_string());
-        }
-        vec![
-            "{".to_string(),
-            output.join(" ").to_string(),
-            "}".to_string(),
-        ]
-    }
 }
 
 pub struct MathMixedGroup {
@@ -333,21 +161,6 @@ impl MathMixedGroup {
             open_delim,
             close_delim,
         }
-    }
-
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
-        let mut output = String::new();
-        output.push_str(&self.open_delim);
-        for child in self.children.iter() {
-            output.push_str(
-                child
-                    .format(indent_level, tabstop, line_length)
-                    .join("")
-                    .trim(),
-            );
-        }
-        output.push_str(&self.close_delim);
-        vec![output]
     }
 }
 
@@ -382,21 +195,6 @@ impl MathCommand {
         Self { name, args }
     }
 
-    fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
-        let mut output = String::new();
-        output.push_str(&self.name);
-        for arg in self.args.iter() {
-            output.push_str(
-                arg.format(indent_level, tabstop, line_length)
-                    .join("")
-                    .trim(),
-            );
-        }
-        if self.name.as_str() != "\\\\" {
-            output.push(' ');
-        }
-        vec![output]
-    }
 }
 
 pub struct MathEnvironment {
@@ -420,7 +218,12 @@ impl MathEnvironment {
         let first_child = node.first_child().unwrap();
         let opt_args: Vec<SyntaxNode> = first_child
             .children()
-            .filter(|child| child.kind() == SyntaxKind::BRACK_GROUP)
+            .filter(|child| {
+                matches!(
+                    child.kind(),
+                    SyntaxKind::BRACK_GROUP | SyntaxKind::CURLY_GROUP 
+                )
+            })
             .collect();
         let opt_args = MathElement::Text(
             opt_args
@@ -465,29 +268,6 @@ impl MathEnvironment {
         };
 
         Self { name, args, body }
-    }
-
-    pub fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
-        let mut line = String::new();
-        let mut lines = Vec::new();
-        let indent = indent_str(indent_level, tabstop);
-
-        line.push_str(&format!("{}\\begin{{{}}}", indent, self.name));
-
-        for arg in self.args.iter() {
-            line.push_str(
-                &arg.format(indent_level, tabstop, line_length)
-                    .join("")
-            );
-        }
-
-        lines.push(line);
-
-        lines.extend(self.align_at_amp(indent_level + 1, tabstop, line_length));
-
-        lines.push(format!("{}\\end{{{}}}", indent, self.name));
-
-        lines
     }
 
     pub fn align_at_amp(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {

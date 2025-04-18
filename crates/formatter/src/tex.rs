@@ -18,6 +18,7 @@ pub enum TexElement {
     Comment(TexComment),
     Blankline,
     KeyValBody(TexKeyValParent),
+    Verbatim(TexVerbatim),
 }
 
 impl TexElement {
@@ -57,6 +58,7 @@ impl TexElement {
             SyntaxKind::TEXT | SyntaxKind::KEY | SyntaxKind::ERROR => {
                 TexElement::Text(node.to_string().replace("\n", " "))
             }
+            SyntaxKind::VERBATIM => TexElement::Verbatim(TexVerbatim::from(node)),
             SyntaxKind::CURLY_GROUP_KEY_VALUE | SyntaxKind::CURLY_GROUP => {
                 TexElement::CurlyGroup(TexCurlyGroup::from(node))
             }
@@ -100,7 +102,9 @@ impl TexParent {
                             TexElement::Text(String::new())
                         }
                     }
-                    SyntaxKind::HREF => TexElement::Text(t.to_string()),
+                    SyntaxKind::HREF | SyntaxKind::VERBATIM => {
+                        TexElement::Text(t.to_string().trim().to_string())
+                    }
                     _ => TexElement::Text(String::new()),
                 },
             })
@@ -279,9 +283,7 @@ impl TexEnvironment {
             .filter(|child| {
                 matches!(
                     child.kind(),
-                    SyntaxKind::BRACK_GROUP
-                        | SyntaxKind::CURLY_GROUP
-                        //| SyntaxKind::CURLY_GROUP_WORD_LIST
+                    SyntaxKind::BRACK_GROUP | SyntaxKind::CURLY_GROUP 
                 )
             })
             .collect();
@@ -399,12 +401,7 @@ pub struct TexSection {
 impl TexSection {
     fn from(node: &SyntaxNode) -> Self {
         let kind = node.first_token().unwrap().to_string();
-        let name = node
-            .first_child()
-            .unwrap()
-            .first_child()
-            .unwrap()
-            .to_string();
+        let name = node.children().filter(|node| node.kind() == SyntaxKind::CURLY_GROUP).collect::<Vec<SyntaxNode>>()[0].to_string().replace(['{', '}'], "");
         let first_child = node.first_child().unwrap().clone();
         let children: Vec<SyntaxNode> = node
             .children()
@@ -426,6 +423,18 @@ impl TexComment {
     fn from(node: &SyntaxNode) -> Self {
         TexComment {
             comment: node.to_string().trim().to_string(),
+        }
+    }
+}
+
+pub struct TexVerbatim {
+    pub body: String,
+}
+
+impl TexVerbatim {
+    fn from(node: &SyntaxNode) -> Self {
+        Self {
+            body: node.to_string(),
         }
     }
 }

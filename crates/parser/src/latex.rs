@@ -1251,20 +1251,21 @@ impl<'a> Parser<'a> {
     }
 
     fn verbatim_block(&mut self) {
-        self.builder.start_node(GENERIC_COMMAND.into());
+        self.builder.start_node(VERBATIM.into());
         self.eat();
-        self.builder.finish_node();
         self.trivia();
 
-        if self.peek() == Some(Token::Pipe) {
+        if let Some(delim) = self.peek() {
             self.eat_remap(SyntaxKind::VERBATIM);
             while let Some(kind) = self.peek() {
                 self.eat_remap(SyntaxKind::VERBATIM);
-                if kind == Token::Pipe {
+                if kind == delim {
                     break;
                 }
             }
         }
+
+        self.builder.finish_node();
     }
 
     fn bibitem(&mut self) {
