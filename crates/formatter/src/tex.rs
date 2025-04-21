@@ -283,7 +283,7 @@ impl TexEnvironment {
             .filter(|child| {
                 matches!(
                     child.kind(),
-                    SyntaxKind::BRACK_GROUP | SyntaxKind::CURLY_GROUP 
+                    SyntaxKind::BRACK_GROUP | SyntaxKind::CURLY_GROUP
                 )
             })
             .collect();
@@ -401,7 +401,12 @@ pub struct TexSection {
 impl TexSection {
     fn from(node: &SyntaxNode) -> Self {
         let kind = node.first_token().unwrap().to_string();
-        let name = node.children().filter(|node| node.kind() == SyntaxKind::CURLY_GROUP).collect::<Vec<SyntaxNode>>()[0].to_string().replace(['{', '}'], "");
+        let name = node
+            .children()
+            .filter(|node| node.kind() == SyntaxKind::CURLY_GROUP)
+            .collect::<Vec<SyntaxNode>>()[0]
+            .to_string()
+            .replace(['{', '}'], "");
         let first_child = node.first_child().unwrap().clone();
         let children: Vec<SyntaxNode> = node
             .children()

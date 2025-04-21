@@ -203,6 +203,8 @@ pub struct MathEnvironment {
     pub body: MathParent,
 }
 
+//TODO: Split text at alignment tabs, add alignment tabs to tree.
+// align_at_amp should respect nested environments.
 impl MathEnvironment {
     pub fn from(node: &SyntaxNode) -> Self {
         let name = node
