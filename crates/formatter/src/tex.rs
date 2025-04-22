@@ -406,7 +406,9 @@ impl TexSection {
             .filter(|node| node.kind() == SyntaxKind::CURLY_GROUP)
             .collect::<Vec<SyntaxNode>>()[0]
             .to_string()
-            .replace(['{', '}'], "");
+            .replace(['{', '}'], "")
+            .trim()
+            .to_string();
         let first_child = node.first_child().unwrap().clone();
         let children: Vec<SyntaxNode> = node
             .children()

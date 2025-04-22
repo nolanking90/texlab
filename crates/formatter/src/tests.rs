@@ -293,7 +293,8 @@ fn test_command_with_multiple_brack_args() {
 #[test]
 fn test_section_with_subsection() {
     check(
-        r"\section{Main Section}\subsection{Sub Section}Content here",
+        r"\section{Main Section}\subsection{Sub Section}
+        Content here",
         expect![[r#"
             [
                 "",
