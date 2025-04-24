@@ -1,4 +1,4 @@
-# LaTeX Formatter (Texlab Backend)
+# LaTeX Formatter
 
 This crate provides a $\LaTeX{}$ formatter for the texlab language server. 
 
@@ -66,7 +66,7 @@ lspconfig.texlab.setup {
 
 ## Troubleshooting
 When creating an issue for problems with the formatter it would be helpful to
-submit a unit test demonstrating the desired behavior of the formmater. Existing
+submit a unit test demonstrating the desired behavior of the formatter. Existing
 unit tests can be found in `tests.rs`.
 
 When somethings goes wrong it's either because the parser has parsed the
@@ -78,7 +78,7 @@ was attached to a `SyntaxNode` as a `SyntaxToken` and the intermediate
 representation did not know to check for this case. This might require
 implementing a new `SyntaxKind` in the parser, handling an additional case in
 the constructor of the appropriate `TexElement` variant, or implementing a new
-`TexElement` varaint.
+`TexElement` variant.
 
 To troubleshoot the former, the formatter can generate an `svg` of the
 syntax tree (before an intermediate representation is constructed). Uncomment
@@ -119,7 +119,7 @@ The formatter recursively walks the syntax tree and constructs an intermediate
 representation (IR). The IR is a decorated syntax tree, where additional
 information necessary for determining formatting rules are added to the nodes.
 The IR tree is made of `TexElement` variants representing various `latex`
-constructions. Environments are seperated into standard environments (e.g.
+constructions. Environments are separated into standard environments (e.g.
 `center`, `figure`, etc.) and math environments. 
 
 ```rust
@@ -171,7 +171,7 @@ The `format` function returns a `Vec` of strings representing lines of the
 formatted document. Each struct determines the "internal" formatting of the code
 it represents, and `TexParent` nodes determine how to layout adjacent document
 elements. That is, `TexParent` determines if elements should be concatenated,
-seperated with a space, seperated with a `~`, or if a line should be wrapped.
+separated with a space, separated with a `~`, or if a line should be wrapped.
 Some line wrapping also takes place in the `format` implementation of other
 structs with their own children, such as `TexEnvironment` and `TexCurlyGroup`.
 Implementations of `Formattable` are contained in `formattable.rs`.
@@ -187,8 +187,8 @@ remove and manual managing of document state.
 - Increased modularity. The current formatting logic is over complicated and
 many cases are handled inside the `TexParent::format` function. It would be
 easier to add new rules and handle special cases if formatting rules were
-refactored. This may require chaning the intermediate representation to use
-cominators like typical pretty printers (see
+refactored. This may require changing the intermediate representation to use
+combinators like typical pretty printers (see
 [here]{https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf}).
 - More tests.
 - Benchmarks against other latex formatters (e.g. latexindent).
