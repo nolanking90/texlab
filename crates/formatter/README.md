@@ -100,7 +100,7 @@ the `dot` executable is in your `$PATH`. This tree is generated using the
 
 For the latter, any of the following could be necessary.
 - A `SyntaxKind` variant may need to be added to the `TexElement` constructor
-- A new `TexElement` variant with it's own formatting rules may need to be
+- A new `TexElement` variant with its own formatting rules may need to be
 implemented. Unless the variant corresponds to a single `SyntaxKind` variant it
 may be difficult to determine when an instance of the new `TexElement` variant
 should be constructed.
