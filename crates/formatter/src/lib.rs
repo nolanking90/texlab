@@ -2,6 +2,7 @@
 use syntax::latex::SyntaxNode;
 
 pub mod lstgraph;
+mod commands;
 mod tex;
 use tex::TexElement;
 mod math;

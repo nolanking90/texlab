@@ -495,9 +495,10 @@ impl<'a> Parser<'a> {
         self.eat();
         while let Some(kind) = self.peek() {
             match kind {
-                Token::LineBreak | Token::Whitespace => self.eat(),
+                Token::LineBreak => self.eat(),
                 Token::LCurly => self.curly_group(),
-                Token::LBrack | Token::LParen => self.mixed_group(),
+                Token::LBrack => self.brack_group(),
+                Token::LParen => self.mixed_group(),
                 _ => break,
             }
         }

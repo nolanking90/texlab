@@ -79,7 +79,8 @@ impl TexElement {
             SyntaxKind::COMMENT => TexElement::Comment(TexComment::from(node)),
             SyntaxKind::KEY_VALUE_BODY => TexElement::KeyValBody(TexKeyValParent::from(node)),
             SyntaxKind::BLANKLINE => TexElement::Blankline,
-            _ => TexElement::Text(String::new()),
+            SyntaxKind::WHITESPACE => TexElement::Text(String::new()),
+            _ => TexElement::Text(node.to_string()),
         }
     }
 }
@@ -92,20 +93,20 @@ impl TexParent {
     fn from(node: &SyntaxNode) -> Self {
         let children = node
             .children_with_tokens()
-            .map(|child| match child {
-                SyntaxElement::Node(n) => TexElement::from(&n),
+            .filter_map(|child| match child {
+                SyntaxElement::Node(n) => Some(TexElement::from(&n)),
                 SyntaxElement::Token(t) => match t.kind() {
                     SyntaxKind::WHITESPACE => {
                         if t.to_string() == *"\\n\\n" {
-                            TexElement::Blankline
+                            Some(TexElement::Blankline)
                         } else {
-                            TexElement::Text(String::new())
+                            None
                         }
                     }
                     SyntaxKind::HREF | SyntaxKind::VERBATIM => {
-                        TexElement::Text(t.to_string().trim().to_string())
+                        Some(TexElement::Text(t.to_string().trim().to_string()))
                     }
-                    _ => TexElement::Text(String::new()),
+                    _ => None,
                 },
             })
             .collect();
@@ -135,26 +136,31 @@ impl TexCommand {
                             .collect(),
                     }));
                 }
-                SyntaxKind::CURLY_GROUP | SyntaxKind::CURLY_GROUP_KEY_VALUE => {
-                    args.push(TexElement::CurlyGroup(TexCurlyGroup::from(&child)));
-                }
                 SyntaxKind::MIXED_GROUP => {
                     args.push(TexElement::MixedGroup(TexMixedGroup::from(&child)));
+                }
+                SyntaxKind::CURLY_GROUP | SyntaxKind::CURLY_GROUP_KEY_VALUE => {
+                    args.push(TexElement::CurlyGroup(TexCurlyGroup::from(&child)));
                 }
                 SyntaxKind::CURLY_GROUP_WORD | SyntaxKind::CURLY_GROUP_WORD_LIST => {
                     args.push(TexElement::CurlyGroupWordList(TexCurlyGroupWordList::from(
                         &child,
                     )));
                 }
-                SyntaxKind::BRACK_GROUP_KEY_VALUE | SyntaxKind::BRACK_GROUP_WORD => {
+                SyntaxKind::BRACK_GROUP_KEY_VALUE
+                | SyntaxKind::BRACK_GROUP_WORD
+                | SyntaxKind::BRACK_GROUP => {
                     args.push(TexElement::BrackGroup(TexBrackGroup::from(&child)));
                 }
                 _ => {}
             }
         }
 
-        let start_newline = matches!(name.as_str(), "\\newline" | "\\newpage" | "\\documentclass")
-            || (node.parent().is_some() && node.parent().unwrap().kind() == SyntaxKind::PREAMBLE);
+        let start_newline = matches!(
+            name.as_str(),
+            "\\newline" | "\\newpage" | "\\documentclass" | "\\noindent"
+        ) || (node.parent().is_some()
+            && node.parent().unwrap().kind() == SyntaxKind::PREAMBLE);
 
         Self {
             name,
@@ -177,13 +183,16 @@ impl TexCurlyGroup {
 }
 
 pub struct TexBrackGroup {
-    pub body: TexParent,
+    pub children: Vec<TexElement>,
 }
 
 impl TexBrackGroup {
     fn from(node: &SyntaxNode) -> Self {
         Self {
-            body: TexParent::from(node),
+            children: node
+                .children()
+                .map(|child| TexElement::from(&child))
+                .collect(),
         }
     }
 }
@@ -319,7 +328,11 @@ impl TexEnvironment {
             .filter(|child| *child != first_child && *child != second_child)
             .collect();
         let body: TexParent = TexParent {
-            children: children.iter().map(TexElement::from).collect(),
+            children: children
+                .iter()
+                .filter(|c| c.kind() != SyntaxKind::END)
+                .map(TexElement::from)
+                .collect(),
         };
 
         Self { name, args, body }

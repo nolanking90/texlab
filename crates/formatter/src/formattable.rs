@@ -65,7 +65,7 @@ impl Formattable for TexParent {
                 TexElement::Command(cmd) => {
                     let cmdln = cmd.format(0, 0, 0).join("").len();
                     if line.len() + cmdln >= line_length && !line.is_empty() {
-                        line = line.trim_end().to_string();
+                        line = line.trim().to_string();
                         if !line.ends_with('%') {
                             line.push('%');
                         }
@@ -185,10 +185,10 @@ impl Formattable for TexParent {
                 }
                 TexElement::KeyValPair(_) => {}
                 TexElement::KeyValBody(k) => {
-                    line.push_str(&k.format(indent_level, tabstop, line_length).join(""));
+                    line.push_str(k.format(indent_level, tabstop, line_length).join("").trim());
                 }
                 TexElement::CurlyGroup(group) => {
-                    let fmt = group.format(indent_level, tabstop, line_length - line.len());
+                    let fmt: Vec<_> = group.format(indent_level, tabstop, line_length - line.len());
                     line.push_str(&fmt[0]);
                     output.push(line);
                     line = String::new();
@@ -328,11 +328,14 @@ impl Formattable for TexCommand {
         let mut fmt = String::new();
         fmt.push_str(&self.name);
         for arg in self.args.iter() {
+            if let TexElement::MixedGroup(_) = arg {
+                fmt.push(' ');
+            }
             if line_length == 0 {
                 fmt.push_str(
                     arg.format(indent_level, tabstop, line_length)
                         .join("")
-                        .trim_end(),
+                        .trim(),
                 );
             } else {
                 let ln = arg.format(indent_level, tabstop, line_length - self.name.len());
@@ -373,6 +376,7 @@ impl Formattable for TexCurlyGroup {
         output.extend(
             bodytext
                 .iter()
+                .filter(|c| !c.is_empty())
                 .map(|line| format!("{indent}{}", line.trim())),
         );
         output.push("}".to_string());
@@ -382,30 +386,30 @@ impl Formattable for TexCurlyGroup {
 
 impl Formattable for TexBrackGroup {
     fn format(&self, indent_level: usize, tabstop: usize, line_length: usize) -> Vec<String> {
-        let mut output = Vec::new();
-        if line_length == 0 {
-            let bodytext = self.body.format(indent_level, tabstop, line_length);
-            output.push(format!("[{}]", bodytext.join("").trim()));
-            return output;
+        let mut output = String::new();
+        output.push('[');
+        for child in self.children.iter() {
+            output.push_str(
+                child
+                    .format(indent_level, tabstop, line_length)
+                    .iter()
+                    .map(|c| c.trim())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+                    .to_string()
+                    .trim(),
+            );
         }
-
-        let bodytext = self.body.format(indent_level, tabstop, line_length);
-        if bodytext.iter().map(|line| line.len()).sum::<usize>() <= line_length {
-            output.push(format!("[{}]", bodytext.join("").trim()));
-            return output;
-        }
-
-        let bodytext = self.body.format(indent_level + 1, tabstop, line_length);
-        let _l = bodytext.len();
-        let indent = indent_str(indent_level + 1, tabstop);
-        output.push("[".to_string());
-        output.extend(
-            bodytext
-                .iter()
-                .map(|line| format!("{indent}{}", line.trim())),
-        );
-        output.push("]".to_string());
-        output
+        output.push(']');
+        output = output
+            .split(',')
+            .map(|c| c.trim())
+            .collect::<Vec<_>>()
+            .join(", ")
+            .to_string()
+            .trim()
+            .to_string();
+        vec![output]
     }
 }
 
@@ -650,10 +654,24 @@ impl Formattable for MathParent {
                     }
                 }
                 MathElement::Environment(env) => {
-                    flush_and_extend(&mut output, &mut line, env, indent_level, tabstop, line_length);
+                    flush_and_extend(
+                        &mut output,
+                        &mut line,
+                        env,
+                        indent_level,
+                        tabstop,
+                        line_length,
+                    );
                 }
                 MathElement::Parent(p) => {
-                    flush_and_extend(&mut output, &mut line, p, indent_level, tabstop, line_length);
+                    flush_and_extend(
+                        &mut output,
+                        &mut line,
+                        p,
+                        indent_level,
+                        tabstop,
+                        line_length,
+                    );
                 }
                 MathElement::CurlyGroup(group) => {
                     line.push_str(
@@ -734,7 +752,6 @@ impl Formattable for MathElement {
             MathElement::MixedGroup(group) => group.format(indent_level, tabstop, line_length),
         }
     }
-
 }
 
 impl Formattable for MathBrackGroup {

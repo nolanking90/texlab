@@ -132,7 +132,7 @@ impl LSTGraph {
         let mut file = File::create(dot_filename.clone()).unwrap();
         _ = Self::write_dot(root, &mut file);
 
-        let png_filename = match path.clone() {
+        let svg_filename = match path.clone() {
             Some(mut path) => {
                 path.set_file_name("tree.svg");
                 path
@@ -146,7 +146,7 @@ impl LSTGraph {
                 dot_filename.to_str().unwrap(),
                 "-Nshape=box",
                 "-o",
-                png_filename.to_str().unwrap(),
+                svg_filename.to_str().unwrap(),
             ])
             .spawn();
 
@@ -154,7 +154,7 @@ impl LSTGraph {
             Ok(_) => log::debug!(
                 "Graph of {} generated successfully at {}",
                 dot_filename.to_str().unwrap(),
-                png_filename.to_str().unwrap()
+                svg_filename.to_str().unwrap()
             ),
             Err(e) => log::debug!("Failed to execute dot command: {}", e),
         }
@@ -175,12 +175,12 @@ impl LSTGraph {
             Dot::with_config(&self.graph, &[DotConfig::EdgeNoLabel])
         ));
 
-        let png_filename = match path.clone() {
+        let svg_filename = match path.clone() {
             Some(mut path) => {
-                path.set_file_name("graphCustom.svg");
+                path.set_file_name("graph.svg");
                 path
             }
-            None => PathBuf::from("graphCustom.svg"),
+            None => PathBuf::from("graph.svg"),
         };
 
         let output = Command::new("dot")
@@ -189,7 +189,7 @@ impl LSTGraph {
                 dot_filename.to_str().unwrap(),
                 "-Nshape=box",
                 "-o",
-                png_filename.to_str().unwrap(),
+                svg_filename.to_str().unwrap(),
             ])
             .spawn();
 
@@ -197,7 +197,7 @@ impl LSTGraph {
             Ok(_) => log::debug!(
                 "Graph of {} generated successfully at {}",
                 dot_filename.to_str().unwrap(),
-                png_filename.to_str().unwrap()
+                svg_filename.to_str().unwrap()
             ),
             Err(e) => log::debug!("Failed to execute dot command: {}", e),
         }

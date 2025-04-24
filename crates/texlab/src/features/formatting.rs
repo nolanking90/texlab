@@ -61,7 +61,7 @@ pub fn format_with_texlab(
     let _ = lstgraph.visit(&latex::SyntaxElement::Node(root_node.clone()));
     let path = &document.path;
     lstgraph.print_graph(path);
-    lstgraph.print_tree(&root_node.clone(), path);
+    //lstgraph.print_tree(&root_node.clone(), path);
 
     let target_dir = tempdir().ok()?;
 
