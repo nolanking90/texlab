@@ -178,17 +178,17 @@ Implementations of `Formattable` are contained in `formattable.rs`.
 
 ## Roadmap
 We have the following goals before the fork is merged upstream.
--- Greater configurability, e.g. specifying if `$ math $` and `$$ math $$`
+- Greater configurability, e.g. specifying if `$ math $` and `$$ math $$`
 should be replaced with `\( \)` and `\[ \]`.
--- Stateless formatting. Currently the formatter progressively builds up a vector
+- Stateless formatting. Currently the formatter progressively builds up a vector
 of strings representing the formatted document. This resembles the use of an
 accumulator, and in the future should be replaced with an actual accumulator to
 remove and manual managing of document state.
--- Increased modularity. The current formatting logic is over complicated and
+- Increased modularity. The current formatting logic is over complicated and
 many cases are handled inside the `TexParent::format` function. It would be
 easier to add new rules and handle special cases if formatting rules were
 refactored. This may require chaning the intermediate representation to use
 cominators like typical pretty printers (see
 [here]{https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf}).
--- More tests.
--- Benchmarks against other latex formatters (e.g. latexindent).
+- More tests.
+- Benchmarks against other latex formatters (e.g. latexindent).
