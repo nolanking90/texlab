@@ -1,6 +1,6 @@
 # LaTeX Formatter
 
-This crate provides a $\LaTeX{}$ formatter for the texlab language server. 
+This crate provides a $\LaTeX{}$ formatter for the TexLab language server. 
 
 ## Formatting Example
 
@@ -36,7 +36,7 @@ Compile the project:
 cargo build
 ```
 
-Set the texlab setting `texlab.latexFormatter = 'texlab'` in your editor's
+Set the TexLab setting `texlab.latexFormatter = 'texlab'` in your editor's
 configuration.
 
 The following is an example configuration for Neovim using the `lsp-config`
@@ -110,8 +110,8 @@ should be constructed.
 
 ### Parsing 
 Texlab uses the Rowan crate to construct a Red/Green tree. The tree consists of
-`SyntaxNode`s. Each node has children either of type `SyntaxNode` or
-`SyntaxToken`. `SyntaxToken`s store the plain text from the document that
+nodes of type `SyntaxNode`. Each node has children either of type `SyntaxNode`
+or `SyntaxToken`. `SyntaxToken`s store the plain text from the document that
 typically is lost during construction of an abstract syntax tree.
 
 ### Lowering and Intermediate Representation
@@ -184,7 +184,7 @@ should be replaced with `\( \)` and `\[ \]`.
 of strings representing the formatted document. This resembles the use of an
 accumulator, and in the future should be replaced with an actual accumulator to
 remove and manual managing of document state.
-- Increased modularity. The current formatting logic is over complicated and
+- Increased modularity. The current formatting logic is overcomplicated and
 many cases are handled inside the `TexParent::format` function. It would be
 easier to add new rules and handle special cases if formatting rules were
 refactored. This may require changing the intermediate representation to use
