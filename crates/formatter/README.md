@@ -189,6 +189,6 @@ many cases are handled inside the `TexParent::format` function. It would be
 easier to add new rules and handle special cases if formatting rules were
 refactored. This may require changing the intermediate representation to use
 combinators like typical pretty printers (see
-[here]{https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf}).
+[here](https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf)).
 - More tests.
 - Benchmarks against other latex formatters (e.g. latexindent).
