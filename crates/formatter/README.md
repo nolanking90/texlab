@@ -111,8 +111,8 @@ should be constructed.
 ### Parsing 
 Texlab uses the Rowan crate to construct a Red/Green tree. The tree consists of
 nodes of type `SyntaxNode`. Each node has children either of type `SyntaxNode`
-or `SyntaxToken`. `SyntaxToken`s store the plain text from the document that
-typically is lost during construction of an abstract syntax tree.
+or `SyntaxToken`. `SyntaxToken` type children store the plain text from the
+document that typically is lost during construction of an abstract syntax tree.
 
 ### Lowering and Intermediate Representation
 The formatter recursively walks the syntax tree and constructs an intermediate
